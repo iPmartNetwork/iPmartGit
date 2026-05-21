@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iPmartGit - پلتفرم مدیریت کد</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">
+        <img src="/assets/logo.svg" alt="iPmartGit" class="nav-logo">
+        <span>iPmartGit</span>
+      </a>
+      <div class="nav-search">
+        <input type="text" id="searchInput" placeholder="جستجوی ریپازیتوری..." class="search-input">
+      </div>
+      <div class="nav-links" id="navLinks">
+        <a href="/explore" class="nav-link">کاوش</a>
+        <a href="/auth/login" class="nav-link btn-outline">ورود</a>
+        <a href="/auth/register" class="nav-link btn-primary">ثبت‌نام</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="hero">
+    <div class="hero-content">
+      <img src="/assets/logo.svg" alt="iPmartGit" class="hero-logo">
+      <h1>iPmartGit</h1>
+      <p class="hero-subtitle">پلتفرم مدیریت کد و همکاری تیمی</p>
+      <p class="hero-description">
+        جایگزین محلی GitHub برای سرورهای ایران. پروژه‌های خود را مدیریت کنید، 
+        از GitHub میرور بگیرید و با تیم خود همکاری کنید.
+      </p>
+      <div class="hero-actions">
+        <a href="/auth/register" class="btn btn-primary btn-lg">شروع کنید</a>
+        <a href="/explore" class="btn btn-outline btn-lg">مشاهده پروژه‌ها</a>
+      </div>
+    </div>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <h3>مدیریت ریپازیتوری</h3>
+        <p>ایجاد و مدیریت ریپازیتوری‌های عمومی و خصوصی</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <h3>میرور از GitHub</h3>
+        <p>پروژه‌های GitHub را به صورت محلی میرور کنید</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📁</div>
+        <h3>آپلود فایل</h3>
+        <p>فایل‌ها و پروژه‌ها را مستقیماً آپلود کنید</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <h3>همکاری تیمی</h3>
+        <p>Issues و بحث‌های تیمی برای هر پروژه</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>خصوصی و امن</h3>
+        <p>کنترل کامل بر دسترسی و حریم خصوصی</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🇮🇷</div>
+        <h3>بدون نیاز به اینترنت بین‌المللی</h3>
+        <p>کاملاً روی سرور محلی اجرا می‌شود</p>
+      </div>
+    </div>
+
+    <div class="stats-section" id="statsSection">
+      <div class="stat-item">
+        <span class="stat-number" id="statUsers">0</span>
+        <span class="stat-label">کاربر</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="statRepos">0</span>
+        <span class="stat-label">ریپازیتوری</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="statPublic">0</span>
+        <span class="stat-label">پروژه عمومی</span>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>iPmartGit &copy; 2024 - پلتفرم مدیریت کد محلی</p>
+  </footer>
+
+  <script src="/js/app.js"></script>
+  <script>
+    // Load stats
+    fetch('/api/stats')
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('statUsers').textContent = data.users;
+        document.getElementById('statRepos').textContent = data.repos;
+        document.getElementById('statPublic').textContent = data.publicRepos;
+      });
+
+    // Check if logged in
+    fetch('/auth/profile')
+      .then(r => r.json())
+      .then(user => {
+        if (user.username) {
+          document.getElementById('navLinks').innerHTML = `
+            <a href="/explore" class="nav-link">کاوش</a>
+            <a href="/repos/new" class="nav-link btn-outline">+ ریپازیتوری جدید</a>
+            <a href="/dashboard" class="nav-link">${user.display_name || user.username}</a>
+          `;
+        }
+      }).catch(() => {});
+  </script>
+</body>
+</html>

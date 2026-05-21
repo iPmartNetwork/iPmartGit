@@ -1,0 +1,212 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../db/database');
+const https = require('https');
+const http = require('http');
+const path = require('path');
+
+// Auth middleware
+function requireAuth(req, res, next) {
+  if (!req.session.user) {
+    return res.status(401).json({ error: 'ابتدا وارد شوید' });
+  }
+  next();
+}
+
+// Mirror page
+router.get('/', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'mirror.html'));
+});
+
+// Create mirror from GitHub
+router.post('/github', requireAuth, (req, res) => {
+  const { github_url, name, description, is_private } = req.body;
+
+  if (!github_url) {
+    return res.status(400).json({ error: 'آدرس GitHub الزامی است' });
+  }
+
+  // Parse GitHub URL
+  const match = github_url.match(/github\.com\/([^\/]+)\/([^\/\s.]+)/);
+  if (!match) {
+    return res.status(400).json({ error: 'آدرس GitHub معتبر نیست' });
+  }
+
+  const ghOwner = match[1];
+  const ghRepo = match[2].replace('.git', '');
+  const repoName = name || ghRepo;
+
+  // Check if repo already exists
+  const existing = db.prepare('SELECT id FROM repositories WHERE name = ? AND owner_id = ?')
+    .get(repoName, req.session.user.id);
+  if (existing) {
+    return res.status(409).json({ error: 'ریپازیتوری با این نام قبلاً وجود دارد' });
+  }
+
+  // Fetch repo info from GitHub API
+  const apiUrl = `https://api.github.com/repos/${ghOwner}/${ghRepo}`;
+
+  fetchJSON(apiUrl).then(ghData => {
+    // Create repository
+    const result = db.prepare(`
+      INSERT INTO repositories (name, owner_id, description, is_private, is_mirror, mirror_url, language)
+      VALUES (?, ?, ?, ?, 1, ?, ?)
+    `).run(
+      repoName,
+      req.session.user.id,
+      description || ghData.description || '',
+      is_private ? 1 : 0,
+      github_url,
+      ghData.language || null
+    );
+
+    const repoId = result.lastInsertRowid;
+
+    // Fetch file tree from GitHub
+    fetchGitHubTree(ghOwner, ghRepo, ghData.default_branch || 'main', repoId)
+      .then(() => {
+        res.json({
+          success: true,
+          message: 'میرور با موفقیت ایجاد شد',
+          redirect: `/${req.session.user.username}/${repoName}`
+        });
+      })
+      .catch(err => {
+        console.error('Error fetching tree:', err);
+        // Still return success since repo was created
+        res.json({
+          success: true,
+          message: 'ریپازیتوری ایجاد شد اما دریافت فایل‌ها با خطا مواجه شد. می‌توانید بعداً سینک کنید.',
+          redirect: `/${req.session.user.username}/${repoName}`
+        });
+      });
+  }).catch(err => {
+    console.error('GitHub API error:', err);
+    // Create repo without GitHub data
+    try {
+      const result = db.prepare(`
+        INSERT INTO repositories (name, owner_id, description, is_private, is_mirror, mirror_url)
+        VALUES (?, ?, ?, ?, 1, ?)
+      `).run(repoName, req.session.user.id, description || '', is_private ? 1 : 0, github_url);
+
+      res.json({
+        success: true,
+        message: 'ریپازیتوری میرور ایجاد شد (بدون دسترسی به GitHub API). فایل‌ها را می‌توانید دستی آپلود کنید.',
+        redirect: `/${req.session.user.username}/${repoName}`
+      });
+    } catch (dbErr) {
+      res.status(500).json({ error: 'خطا در ایجاد ریپازیتوری' });
+    }
+  });
+});
+
+// Sync mirror
+router.post('/:owner/:repo/sync', requireAuth, (req, res) => {
+  const { owner, repo } = req.params;
+
+  const repoData = db.prepare(`
+    SELECT r.* FROM repositories r
+    JOIN users u ON r.owner_id = u.id
+    WHERE r.name = ? AND u.username = ? AND r.is_mirror = 1
+  `).get(repo, owner);
+
+  if (!repoData) return res.status(404).json({ error: 'ریپازیتوری میرور یافت نشد' });
+  if (repoData.owner_id !== req.session.user.id) {
+    return res.status(403).json({ error: 'دسترسی ندارید' });
+  }
+
+  const match = repoData.mirror_url.match(/github\.com\/([^\/]+)\/([^\/\s.]+)/);
+  if (!match) {
+    return res.status(400).json({ error: 'آدرس میرور معتبر نیست' });
+  }
+
+  const ghOwner = match[1];
+  const ghRepo = match[2].replace('.git', '');
+
+  // Delete existing files and re-fetch
+  db.prepare('DELETE FROM repo_files WHERE repo_id = ?').run(repoData.id);
+
+  fetchGitHubTree(ghOwner, ghRepo, repoData.default_branch || 'main', repoData.id)
+    .then(() => {
+      db.prepare('UPDATE repositories SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(repoData.id);
+      res.json({ success: true, message: 'سینک با موفقیت انجام شد' });
+    })
+    .catch(err => {
+      console.error('Sync error:', err);
+      res.status(500).json({ error: 'خطا در سینک. ممکن است دسترسی به GitHub محدود باشد.' });
+    });
+});
+
+// Helper: Fetch JSON from URL
+function fetchJSON(url) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      headers: { 'User-Agent': 'iPmartGit/1.0' }
+    };
+
+    const protocol = url.startsWith('https') ? https : http;
+    protocol.get(url, options, (response) => {
+      let data = '';
+      response.on('data', chunk => data += chunk);
+      response.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          reject(new Error('Invalid JSON response'));
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+// Helper: Fetch GitHub tree and save files
+async function fetchGitHubTree(owner, repo, branch, repoId) {
+  const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
+  const tree = await fetchJSON(treeUrl);
+
+  if (!tree.tree) return;
+
+  const insertFile = db.prepare(`
+    INSERT INTO repo_files (repo_id, file_path, file_name, content, is_binary, size)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  // Only fetch content for small text files (< 1MB)
+  for (const item of tree.tree.slice(0, 100)) { // Limit to 100 files
+    if (item.type !== 'blob') continue;
+    if (item.size > 1024 * 1024) continue; // Skip files > 1MB
+
+    try {
+      const contentUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${item.path}?ref=${branch}`;
+      const fileData = await fetchJSON(contentUrl);
+
+      let content = null;
+      let isBinary = 0;
+
+      if (fileData.encoding === 'base64' && fileData.content) {
+        const decoded = Buffer.from(fileData.content, 'base64');
+        if (isBinaryBuffer(decoded)) {
+          isBinary = 1;
+        } else {
+          content = decoded.toString('utf8');
+        }
+      }
+
+      const fileName = item.path.split('/').pop();
+      insertFile.run(repoId, item.path, fileName, content, isBinary, item.size || 0);
+    } catch (err) {
+      // Skip files that can't be fetched
+      const fileName = item.path.split('/').pop();
+      insertFile.run(repoId, item.path, fileName, null, 0, item.size || 0);
+    }
+  }
+}
+
+function isBinaryBuffer(buffer) {
+  for (let i = 0; i < Math.min(buffer.length, 8000); i++) {
+    if (buffer[i] === 0) return true;
+  }
+  return false;
+}
+
+module.exports = router;

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ویرایش فایل - iPmartGit</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .editor-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .editor-path {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+    .editor-path a {
+      color: var(--accent-blue);
+    }
+    .code-editor {
+      width: 100%;
+      min-height: 500px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      resize: vertical;
+      direction: ltr;
+      text-align: left;
+      tab-size: 2;
+    }
+    .code-editor:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+    .editor-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      justify-content: flex-end;
+    }
+    .editor-info {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">
+        <img src="/assets/logo.svg" alt="iPmartGit" class="nav-logo">
+        <span>iPmartGit</span>
+      </a>
+      <div class="nav-links">
+        <a href="/dashboard" class="nav-link">داشبورد</a>
+        <a href="/auth/logout" class="nav-link">خروج</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="editor-container">
+    <div class="editor-header">
+      <div class="editor-path" id="editorPath">در حال بارگذاری...</div>
+    </div>
+
+    <textarea class="code-editor" id="codeEditor" spellcheck="false"></textarea>
+
+    <div class="editor-info">
+      <span id="charCount">0 کاراکتر</span>
+      <span id="lineCount">0 خط</span>
+    </div>
+
+    <div class="editor-actions">
+      <a id="cancelBtn" href="#" class="btn btn-outline">انصراف</a>
+      <button id="saveBtn" class="btn btn-primary" onclick="saveFile()">💾 ذخیره تغییرات</button>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const owner = params.get('owner');
+    const repo = params.get('repo');
+    const filePath = params.get('path');
+    const editor = document.getElementById('codeEditor');
+
+    async function loadFile() {
+      if (!owner || !repo || !filePath) {
+        document.getElementById('editorPath').textContent = 'پارامترهای نامعتبر';
+        return;
+      }
+
+      document.getElementById('editorPath').innerHTML = `
+        <a href="/${owner}/${repo}">${owner}/${repo}</a> / ${filePath}
+      `;
+      document.getElementById('cancelBtn').href = `/${owner}/${repo}`;
+
+      try {
+        const data = await api(`/api/repos/${owner}/${repo}/file/${filePath}`);
+        if (data.is_binary) {
+          editor.value = '⚠️ فایل باینری قابل ویرایش نیست';
+          editor.disabled = true;
+          document.getElementById('saveBtn').disabled = true;
+        } else {
+          editor.value = data.content || '';
+          updateCounts();
+        }
+      } catch (err) {
+        editor.value = 'خطا در بارگذاری فایل: ' + err.message;
+        editor.disabled = true;
+      }
+    }
+
+    function updateCounts() {
+      const text = editor.value;
+      document.getElementById('charCount').textContent = text.length + ' کاراکتر';
+      document.getElementById('lineCount').textContent = text.split('\n').length + ' خط';
+    }
+
+    editor.addEventListener('input', updateCounts);
+
+    // Tab support in editor
+    editor.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + 2;
+        updateCounts();
+      }
+      // Ctrl+S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveFile();
+      }
+    });
+
+    async function saveFile() {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.textContent = 'در حال ذخیره...';
+
+      try {
+        const data = await api(`/api/repos/${owner}/${repo}/file/${filePath}`, {
+          method: 'PUT',
+          body: { content: editor.value }
+        });
+        showAlert(data.message || 'ذخیره شد', 'success', document.querySelector('.editor-container'));
+        btn.textContent = '✅ ذخیره شد';
+        setTimeout(() => {
+          btn.textContent = '💾 ذخیره تغییرات';
+          btn.disabled = false;
+        }, 2000);
+      } catch (err) {
+        showAlert(err.message, 'error', document.querySelector('.editor-container'));
+        btn.textContent = '💾 ذخیره تغییرات';
+        btn.disabled = false;
+      }
+    }
+
+    loadFile();
+  </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ورود - iPmartGit</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">
+        <img src="/assets/logo.svg" alt="iPmartGit" class="nav-logo">
+        <span>iPmartGit</span>
+      </a>
+      <div class="nav-links">
+        <a href="/auth/register" class="nav-link btn-primary">ثبت‌نام</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="form-container">
+    <div class="form-card">
+      <h2>ورود به iPmartGit</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">نام کاربری یا ایمیل</label>
+          <input type="text" id="username" name="username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">رمز عبور</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:10px;">
+          ورود
+        </button>
+      </form>
+      <div class="form-footer">
+        حساب ندارید؟ <a href="/auth/register">ثبت‌نام کنید</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const data = await api('/auth/login', {
+          method: 'POST',
+          body: { username, password }
+        });
+        if (data.redirect) window.location.href = data.redirect;
+      } catch (err) {
+        showAlert(err.message);
+      }
+    });
+  </script>
+</body>
+</html>

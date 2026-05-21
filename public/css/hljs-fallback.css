@@ -1,0 +1,32 @@
+/* Fallback syntax highlighting when highlight.js CDN is not available */
+/* Download highlight.js locally for offline use:
+   https://highlightjs.org/download/
+   Place highlight.min.js in /js/ and github-dark.min.css in /css/
+*/
+
+pre code {
+  color: var(--text-primary);
+}
+
+pre code .hljs-keyword,
+pre code .hljs-selector-tag,
+pre code .hljs-built_in { color: #ff7b72; }
+
+pre code .hljs-string,
+pre code .hljs-attr { color: #a5d6ff; }
+
+pre code .hljs-comment,
+pre code .hljs-quote { color: #8b949e; font-style: italic; }
+
+pre code .hljs-number,
+pre code .hljs-literal { color: #79c0ff; }
+
+pre code .hljs-function,
+pre code .hljs-title { color: #d2a8ff; }
+
+pre code .hljs-type,
+pre code .hljs-class { color: #ffa657; }
+
+pre code .hljs-variable { color: #ffa657; }
+
+pre code .hljs-tag { color: #7ee787; }

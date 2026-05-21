@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ریپازیتوری - iPmartGit</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">
+        <img src="/assets/logo.svg" alt="iPmartGit" class="nav-logo">
+        <span>iPmartGit</span>
+      </a>
+      <div class="nav-search">
+        <input type="text" id="searchInput" placeholder="جستجوی ریپازیتوری..." class="search-input">
+      </div>
+      <div class="nav-links" id="navLinks">
+        <a href="/auth/login" class="nav-link btn-outline">ورود</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="repo-view">
+    <div id="repoContent">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const owner = pathParts[0];
+    const repo = pathParts[1];
+    let currentUser = null;
+
+    async function loadRepo() {
+      // Check auth
+      try {
+        currentUser = await api('/auth/profile');
+        document.getElementById('navLinks').innerHTML = `
+          <a href="/repos/new" class="nav-link btn-outline">+ جدید</a>
+          <a href="/dashboard" class="nav-link">${currentUser.display_name || currentUser.username}</a>
+        `;
+      } catch(e) {}
+
+      try {
+        const data = await api(`/api/repos/${owner}/${repo}`);
+        document.title = `${owner}/${repo} - iPmartGit`;
+        renderRepo(data);
+      } catch (err) {
+        document.getElementById('repoContent').innerHTML = `
+          <div class="empty-state">
+            <h3>ریپازیتوری یافت نشد</h3>
+            <p>${err.message}</p>
+            <a href="/" class="btn btn-primary" style="margin-top:20px;">بازگشت به خانه</a>
+          </div>
+        `;
+      }
+    }
+
+    function renderRepo(data) {
+      const isOwner = currentUser && currentUser.id === data.owner_id;
+      const isLoggedIn = !!currentUser;
+      
+      let html = `
+        <div class="repo-header">
+          <div class="repo-title">
+            <span>📦</span>
+            <a href="/${data.owner_name}">${data.owner_name}</a>
+            <span>/</span>
+            <strong>${data.name}</strong>
+            ${data.is_private ? '<span class="repo-card-badge private">خصوصی</span>' : ''}
+            ${data.is_mirror ? '<span class="repo-card-badge mirror">میرور</span>' : ''}
+          </div>
+          <div class="repo-actions">
+            <a href="/api/repos/${owner}/${repo}/download" class="btn btn-outline btn-sm">📥 ZIP</a>
+            ${isLoggedIn && !isOwner ? `<button class="btn btn-outline btn-sm" onclick="forkRepo()">🍴 Fork (${data.forks || 0})</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="toggleStar()" id="starBtn">
+              ${data.isStarred ? '⭐' : '☆'} <span id="starCount">${data.stars}</span>
+            </button>
+            ${data.is_mirror && isOwner ? '<button class="btn btn-outline btn-sm" onclick="syncMirror()">🔄 سینک</button>' : ''}
+            ${isOwner ? '<button class="btn btn-danger btn-sm" onclick="deleteRepo()">🗑️</button>' : ''}
+          </div>
+        </div>
+
+        ${data.description ? `<p style="color:var(--text-secondary); margin-bottom:20px;">${data.description}</p>` : ''}
+        ${data.mirror_url ? `<p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">🔗 میرور از: <a href="${data.mirror_url}" dir="ltr">${data.mirror_url}</a></p>` : ''}
+
+        <div class="repo-tabs">
+          <span class="repo-tab active" onclick="showTab('code')">📁 کد</span>
+          <span class="repo-tab" onclick="showTab('issues')">🐛 Issues</span>
+          <span class="repo-tab" onclick="showTab('prs')">🔀 PRs</span>
+          <span class="repo-tab" onclick="showTab('releases')">🏷️ Releases</span>
+          <span class="repo-tab" onclick="showTab('search')">🔍 جستجو</span>
+          ${isOwner ? '<span class="repo-tab" onclick="showTab(\'upload\')">📤 آپلود</span>' : ''}
+          ${isOwner ? '<span class="repo-tab" onclick="showTab(\'settings\')">⚙️ تنظیمات</span>' : ''}
+        </div>
+
+        <div id="tabCode">
+          ${isOwner ? `
+          <div style="margin-bottom:12px; display:flex; gap:8px;">
+            <a href="/new-file?owner=${owner}&repo=${repo}" class="btn btn-sm btn-outline">📄 فایل جدید</a>
+          </div>
+          ` : ''}
+          ${renderFileTree(data.files, isOwner)}
+        </div>
+
+        <div id="tabIssues" style="display:none;"></div>
+
+        <div id="tabPrs" style="display:none;"></div>
+
+        <div id="tabReleases" style="display:none;"></div>
+
+        <div id="tabSearch" style="display:none;">
+          <div style="margin-bottom:16px; display:flex; gap:8px;">
+            <input type="text" id="repoSearchInput" placeholder="جستجو در فایل‌ها..." class="search-input" style="flex:1;" dir="ltr">
+            <button class="btn btn-primary btn-sm" onclick="searchInRepo()">جستجو</button>
+          </div>
+          <div id="searchResults"></div>
+        </div>
+
+        ${isOwner ? `
+        <div id="tabUpload" style="display:none;">
+          <div class="upload-area" id="uploadArea">
+            <p style="font-size:2rem;">📁</p>
+            <p>فایل‌ها را اینجا بکشید یا کلیک کنید</p>
+            <input type="file" id="fileInput" multiple style="display:none;">
+          </div>
+          <div id="uploadProgress" style="display:none;" class="alert alert-info"></div>
+        </div>
+
+        <div id="tabSettings" style="display:none;">
+          <div class="form-card" style="max-width:100%;">
+            <h3 style="margin-bottom:16px;">👥 همکاران</h3>
+            <div style="display:flex; gap:8px; margin-bottom:16px;">
+              <input type="text" id="collabUsername" placeholder="نام کاربری" class="search-input" style="flex:1;">
+              <select id="collabPermission" style="padding:8px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-primary);">
+                <option value="read">خواندن</option>
+                <option value="write">نوشتن</option>
+                <option value="admin">ادمین</option>
+              </select>
+              <button class="btn btn-primary btn-sm" onclick="addCollaborator()">اضافه</button>
+            </div>
+            <div id="collabList"></div>
+
+            <hr style="border-color:var(--border-color); margin:24px 0;">
+
+            <h3 style="margin-bottom:16px;">📤 خروجی / وارد کردن</h3>
+            <div style="display:flex; gap:8px;">
+              <a href="/transfer/export/${owner}/${repo}" class="btn btn-outline btn-sm">📤 خروجی JSON</a>
+              <a href="/api/repos/${owner}/${repo}/download" class="btn btn-outline btn-sm">📥 دانلود ZIP</a>
+            </div>
+            <p style="color:var(--text-muted); font-size:0.8rem; margin-top:8px;">خروجی JSON شامل فایل‌ها، Issues، Labels و Releases است</p>
+
+            <hr style="border-color:var(--border-color); margin:24px 0;">
+
+            <h3 style="margin-bottom:16px;">📋 آدرس Git Clone</h3>
+            <code style="display:block; padding:12px; background:var(--bg-primary); border-radius:var(--radius-md); font-size:0.85rem; direction:ltr; text-align:left; color:var(--accent-blue);">
+              git clone http://SERVER:3000/git/${owner}/${repo}.git
+            </code>
+          </div>
+        </div>
+        ` : ''}
+
+        <div id="fileViewer" style="display:none;"></div>
+      `;
+
+      document.getElementById('repoContent').innerHTML = html;
+      setupUpload();
+      if (isOwner) loadCollaborators();
+    }
+
+    function renderFileTree(files, isOwner) {
+      if (!files || files.length === 0) {
+        return '<div class="empty-state"><p>هنوز فایلی وجود ندارد</p></div>';
+      }
+
+      // Build tree structure
+      const tree = {};
+      files.forEach(f => {
+        const parts = f.file_path.split('/');
+        let current = tree;
+        parts.forEach((part, i) => {
+          if (i === parts.length - 1) {
+            current[part] = f;
+          } else {
+            if (!current[part]) current[part] = {};
+            current = current[part];
+          }
+        });
+      });
+
+      return `
+        <div class="file-browser">
+          <div class="file-browser-header">
+            <span>${files.length} فایل</span>
+            <span style="color:var(--text-muted);">${formatSize(files.reduce((a, f) => a + (f.size || 0), 0))}</span>
+          </div>
+          ${renderTreeItems(tree, '', isOwner)}
+        </div>
+      `;
+    }
+
+    function renderTreeItems(tree, prefix, isOwner) {
+      let html = '';
+      const entries = Object.entries(tree).sort(([,a], [,b]) => {
+        const aIsDir = !a.file_path;
+        const bIsDir = !b.file_path;
+        if (aIsDir && !bIsDir) return -1;
+        if (!aIsDir && bIsDir) return 1;
+        return 0;
+      });
+
+      for (const [name, value] of entries) {
+        if (value.file_path) {
+          // File
+          html += `
+            <div class="file-item">
+              <span class="file-icon">${getFileIcon(name)}</span>
+              <span class="file-name" onclick="viewFile('${value.file_path}')" style="cursor:pointer; flex:1;">${name}</span>
+              <span class="file-size">${formatSize(value.size)}</span>
+              ${isOwner && !value.is_binary ? `<a href="/edit?owner=${owner}&repo=${repo}&path=${encodeURIComponent(value.file_path)}" class="btn btn-sm btn-outline" style="margin-right:4px;" title="ویرایش">✏️</a>` : ''}
+              ${isOwner ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteFile('${value.file_path}')" title="حذف">🗑️</button>` : ''}
+            </div>
+          `;
+        } else {
+          // Directory - collapsible
+          const dirId = 'dir-' + (prefix + name).replace(/[^a-zA-Z0-9]/g, '-');
+          html += `
+            <div class="file-item" style="cursor:pointer;" onclick="document.getElementById('${dirId}').style.display = document.getElementById('${dirId}').style.display === 'none' ? 'block' : 'none'">
+              <span class="file-icon">📁</span>
+              <span class="file-name"><strong>${name}/</strong></span>
+              <span class="file-size" style="font-size:0.75rem; color:var(--text-muted);">▼</span>
+            </div>
+            <div id="${dirId}" style="padding-right:20px;">
+          `;
+          html += renderTreeItems(value, prefix + name + '/', isOwner);
+          html += '</div>';
+        }
+      }
+      return html;
+    }
+
+    async function viewFile(filePath) {
+      try {
+        const data = await api(`/api/repos/${owner}/${repo}/file/${filePath}`);
+        const viewer = document.getElementById('fileViewer');
+        const isOwner = currentUser && currentUser.username === owner;
+        viewer.style.display = 'block';
+
+        // Breadcrumb
+        const parts = filePath.split('/');
+        const breadcrumb = parts.map((p, i) => {
+          if (i === parts.length - 1) return `<span style="color:var(--text-primary);">${p}</span>`;
+          return `<span style="color:var(--accent-blue); cursor:pointer;">${p}</span>`;
+        }).join(' <span style="color:var(--text-muted);">/</span> ');
+
+        const editBtn = isOwner && !data.is_binary 
+          ? `<a href="/edit?owner=${owner}&repo=${repo}&path=${encodeURIComponent(filePath)}" class="btn btn-sm btn-outline">✏️ ویرایش</a>` 
+          : '';
+        const historyBtn = `<button class="btn btn-sm btn-outline" onclick="viewFileHistory('${filePath}')">📜 تاریخچه</button>`;
+
+        // Detect language from extension
+        const ext = data.file_name.split('.').pop().toLowerCase();
+        const langMap = {
+          js: 'javascript', ts: 'typescript', py: 'python', rb: 'ruby',
+          java: 'java', go: 'go', rs: 'rust', php: 'php', cs: 'csharp',
+          cpp: 'cpp', c: 'c', h: 'c', hpp: 'cpp', swift: 'swift',
+          kt: 'kotlin', scala: 'scala', sh: 'bash', bash: 'bash',
+          zsh: 'bash', fish: 'bash', ps1: 'powershell',
+          html: 'html', htm: 'html', xml: 'xml', svg: 'xml',
+          css: 'css', scss: 'scss', less: 'less', sass: 'scss',
+          json: 'json', yaml: 'yaml', yml: 'yaml', toml: 'toml',
+          md: 'markdown', sql: 'sql', graphql: 'graphql',
+          dockerfile: 'dockerfile', makefile: 'makefile',
+          vue: 'html', jsx: 'javascript', tsx: 'typescript',
+          env: 'bash', ini: 'ini', conf: 'nginx', nginx: 'nginx'
+        };
+        const lang = langMap[ext] || '';
+
+        if (data.renderedContent) {
+          viewer.innerHTML = `
+            <div class="code-viewer">
+              <div class="code-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:0.85rem;">${breadcrumb}</span>
+                </div>
+                <div style="display:flex; gap:6px;">
+                  ${historyBtn}
+                  ${editBtn}
+                  <button class="btn btn-sm btn-outline" onclick="document.getElementById('fileViewer').style.display='none'">✕</button>
+                </div>
+              </div>
+              <div class="markdown-body">${data.renderedContent}</div>
+            </div>
+          `;
+        } else if (data.content) {
+          viewer.innerHTML = `
+            <div class="code-viewer">
+              <div class="code-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:0.85rem;">${breadcrumb}</span>
+                  <span style="color:var(--text-muted); font-size:0.8rem;">(${formatSize(data.size)})</span>
+                </div>
+                <div style="display:flex; gap:6px;">
+                  ${historyBtn}
+                  ${editBtn}
+                  <button class="btn btn-sm btn-outline" onclick="document.getElementById('fileViewer').style.display='none'">✕</button>
+                </div>
+              </div>
+              <div class="code-content"><pre><code class="${lang ? 'language-' + lang : ''}">${escapeHtml(data.content)}</code></pre></div>
+            </div>
+          `;
+          // Apply syntax highlighting
+          viewer.querySelectorAll('pre code').forEach(block => {
+            if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+          });
+        } else {
+          viewer.innerHTML = `
+            <div class="code-viewer">
+              <div class="code-header">
+                <span>${data.file_name}</span>
+                <button class="btn btn-sm btn-outline" onclick="document.getElementById('fileViewer').style.display='none'">✕</button>
+              </div>
+              <div style="padding:30px; text-align:center; color:var(--text-secondary);">
+                فایل باینری - قابل نمایش نیست
+              </div>
+            </div>
+          `;
+        }
+
+        viewer.scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        showAlert(err.message);
+      }
+    }
+
+    // File History & Diff
+    async function viewFileHistory(filePath) {
+      const viewer = document.getElementById('fileViewer');
+      try {
+        const history = await api(`/api/repos/${owner}/${repo}/history/${filePath}`);
+
+        if (history.length === 0) {
+          viewer.innerHTML = `
+            <div class="code-viewer">
+              <div class="code-header">
+                <span>📜 تاریخچه: ${filePath}</span>
+                <button class="btn btn-sm btn-outline" onclick="viewFile('${filePath}')">← بازگشت</button>
+              </div>
+              <div style="padding:30px; text-align:center; color:var(--text-muted);">هنوز تاریخچه‌ای ثبت نشده</div>
+            </div>
+          `;
+          return;
+        }
+
+        viewer.innerHTML = `
+          <div class="code-viewer">
+            <div class="code-header">
+              <span>📜 تاریخچه: ${filePath} (${history.length} نسخه)</span>
+              <button class="btn btn-sm btn-outline" onclick="viewFile('${filePath}')">← بازگشت به فایل</button>
+            </div>
+            <div style="padding:16px;">
+              ${history.map((h, i) => `
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid var(--border-color);">
+                  <div>
+                    <strong style="font-size:0.9rem;">${h.message || 'ویرایش'}</strong>
+                    <div style="font-size:0.8rem; color:var(--text-muted);">${h.author_display_name || h.author_name} - ${formatDate(h.created_at)}</div>
+                  </div>
+                  <div style="display:flex; gap:6px;">
+                    <button class="btn btn-sm btn-outline" onclick="viewHistoryVersion(${h.id}, '${filePath}')">مشاهده</button>
+                    ${i < history.length - 1 ? `<button class="btn btn-sm btn-outline" onclick="viewDiff(${h.id}, ${history[i+1].id}, '${filePath}')">مقایسه</button>` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (err) { showAlert(err.message); }
+    }
+
+    async function viewHistoryVersion(versionId, filePath) {
+      const viewer = document.getElementById('fileViewer');
+      try {
+        const version = await api(`/api/repos/${owner}/${repo}/history-version/${versionId}`);
+        const ext = filePath.split('.').pop().toLowerCase();
+        const langMap = { js:'javascript', ts:'typescript', py:'python', html:'html', css:'css', json:'json', yaml:'yaml', sh:'bash', go:'go', rs:'rust', java:'java', php:'php' };
+        const lang = langMap[ext] || '';
+
+        viewer.innerHTML = `
+          <div class="code-viewer">
+            <div class="code-header">
+              <span>نسخه قدیمی: ${filePath} (${formatDate(version.created_at)})</span>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-sm btn-outline" onclick="viewFileHistory('${filePath}')">← تاریخچه</button>
+                <button class="btn btn-sm btn-outline" onclick="viewFile('${filePath}')">فایل فعلی</button>
+              </div>
+            </div>
+            <div class="code-content"><pre><code class="${lang ? 'language-' + lang : ''}">${escapeHtml(version.content || '')}</code></pre></div>
+          </div>
+        `;
+        viewer.querySelectorAll('pre code').forEach(block => {
+          if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+        });
+      } catch (err) { showAlert(err.message); }
+    }
+
+    async function viewDiff(newId, oldId, filePath) {
+      const viewer = document.getElementById('fileViewer');
+      try {
+        const [newVer, oldVer] = await Promise.all([
+          api(`/api/repos/${owner}/${repo}/history-version/${newId}`),
+          api(`/api/repos/${owner}/${repo}/history-version/${oldId}`)
+        ]);
+
+        const diff = computeDiff(oldVer.content || '', newVer.content || '');
+
+        viewer.innerHTML = `
+          <div class="code-viewer">
+            <div class="code-header">
+              <span>مقایسه: ${filePath}</span>
+              <button class="btn btn-sm btn-outline" onclick="viewFileHistory('${filePath}')">← تاریخچه</button>
+            </div>
+            <div class="code-content" style="font-size:0.8rem;">
+              <pre>${diff}</pre>
+            </div>
+          </div>
+        `;
+      } catch (err) { showAlert(err.message); }
+    }
+
+    // Simple line-by-line diff
+    function computeDiff(oldText, newText) {
+      const oldLines = oldText.split('\n');
+      const newLines = newText.split('\n');
+      let result = '';
+      const maxLen = Math.max(oldLines.length, newLines.length);
+
+      for (let i = 0; i < maxLen; i++) {
+        const oldLine = oldLines[i];
+        const newLine = newLines[i];
+
+        if (oldLine === undefined) {
+          result += `<span style="color:var(--accent-green); background:rgba(63,185,80,0.1); display:block;">+ ${escapeHtml(newLine)}</span>`;
+        } else if (newLine === undefined) {
+          result += `<span style="color:var(--accent-red); background:rgba(248,81,73,0.1); display:block;">- ${escapeHtml(oldLine)}</span>`;
+        } else if (oldLine !== newLine) {
+          result += `<span style="color:var(--accent-red); background:rgba(248,81,73,0.1); display:block;">- ${escapeHtml(oldLine)}</span>`;
+          result += `<span style="color:var(--accent-green); background:rgba(63,185,80,0.1); display:block;">+ ${escapeHtml(newLine)}</span>`;
+        } else {
+          result += `<span style="display:block; color:var(--text-muted);">  ${escapeHtml(oldLine)}</span>`;
+        }
+      }
+      return result;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function showTab(tab) {
+      document.querySelectorAll('.repo-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+
+      document.getElementById('tabCode').style.display = tab === 'code' ? 'block' : 'none';
+      document.getElementById('tabIssues').style.display = tab === 'issues' ? 'block' : 'none';
+      document.getElementById('tabPrs').style.display = tab === 'prs' ? 'block' : 'none';
+      document.getElementById('tabReleases').style.display = tab === 'releases' ? 'block' : 'none';
+      document.getElementById('tabSearch').style.display = tab === 'search' ? 'block' : 'none';
+      const uploadTab = document.getElementById('tabUpload');
+      if (uploadTab) uploadTab.style.display = tab === 'upload' ? 'block' : 'none';
+      const settingsTab = document.getElementById('tabSettings');
+      if (settingsTab) settingsTab.style.display = tab === 'settings' ? 'block' : 'none';
+
+      if (tab === 'issues') loadIssues();
+      if (tab === 'prs') loadPullRequests();
+      if (tab === 'releases') loadReleases();
+    }
+
+    async function loadIssues() {
+      const container = document.getElementById('tabIssues');
+      const isOwner = currentUser && currentUser.username === owner;
+      const isLoggedIn = !!currentUser;
+
+      try {
+        const issues = await api(`/api/repos/${owner}/${repo}/issues`);
+
+        let html = '';
+        if (isLoggedIn) {
+          html += `
+            <div style="margin-bottom:16px; padding:16px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md);">
+              <h4 style="margin-bottom:12px;">ایجاد Issue جدید</h4>
+              <input type="text" id="newIssueTitle" placeholder="عنوان" class="search-input" style="width:100%; margin-bottom:8px;">
+              <textarea id="newIssueBody" placeholder="توضیحات (اختیاری)" style="width:100%; min-height:80px; padding:10px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-primary); font-family:inherit; resize:vertical;"></textarea>
+              <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="createIssue()">ایجاد Issue</button>
+            </div>
+          `;
+        }
+
+        if (issues.length === 0) {
+          html += '<div class="empty-state"><p>هنوز Issue ای وجود ندارد</p></div>';
+        } else {
+          html += issues.map(issue => `
+            <div class="repo-card" style="margin-bottom:8px; cursor:pointer;" onclick="viewIssue(${issue.id}, '${issue.title.replace(/'/g, "\\'")}')">
+              <div class="repo-card-header">
+                <span style="color:${issue.state === 'open' ? 'var(--accent-green)' : 'var(--accent-red)'};">●</span>
+                <strong>${issue.title}</strong>
+              </div>
+              <div class="repo-card-meta">
+                <span>توسط ${issue.author_display_name || issue.author_name}</span>
+                <span>${formatDate(issue.created_at)}</span>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<p class="alert alert-error">خطا در بارگذاری</p>';
+      }
+    }
+
+    async function createIssue() {
+      const title = document.getElementById('newIssueTitle').value.trim();
+      const body = document.getElementById('newIssueBody').value.trim();
+      if (!title) { showAlert('عنوان الزامی است'); return; }
+
+      try {
+        await api(`/api/repos/${owner}/${repo}/issues`, {
+          method: 'POST',
+          body: { title, body }
+        });
+        document.getElementById('newIssueTitle').value = '';
+        document.getElementById('newIssueBody').value = '';
+        loadIssues();
+      } catch (err) { showAlert(err.message); }
+    }
+
+    async function viewIssue(issueId, title) {
+      const container = document.getElementById('tabIssues');
+      const isOwner = currentUser && currentUser.username === owner;
+
+      try {
+        const comments = await api(`/api/repos/${owner}/${repo}/issues/${issueId}/comments`);
+
+        let html = `
+          <div style="margin-bottom:16px;">
+            <button class="btn btn-sm btn-outline" onclick="loadIssues()">← بازگشت به لیست</button>
+          </div>
+          <div style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:20px; margin-bottom:16px;">
+            <h3>${title}</h3>
+            ${isOwner || currentUser ? `
+              <div style="margin-top:12px;">
+                <button class="btn btn-sm btn-outline" onclick="toggleIssueState(${issueId}, 'closed')">بستن Issue</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+
+        if (comments.length > 0) {
+          html += comments.map(c => `
+            <div style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:16px; margin-bottom:8px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem; color:var(--text-secondary);">
+                <span><strong>${c.author_display_name || c.author_name}</strong></span>
+                <span>${formatDate(c.created_at)}</span>
+              </div>
+              <div style="white-space:pre-wrap;">${c.body}</div>
+            </div>
+          `).join('');
+        } else {
+          html += '<p style="color:var(--text-muted); margin-bottom:16px;">هنوز کامنتی وجود ندارد</p>';
+        }
+
+        if (currentUser) {
+          html += `
+            <div style="margin-top:16px;">
+              <textarea id="commentBody" placeholder="کامنت خود را بنویسید..." style="width:100%; min-height:100px; padding:12px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-primary); font-family:inherit; resize:vertical;"></textarea>
+              <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="addComment(${issueId}, '${title.replace(/'/g, "\\'")}')">ارسال کامنت</button>
+            </div>
+          `;
+        }
+
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<p class="alert alert-error">خطا در بارگذاری</p>';
+      }
+    }
+
+    async function addComment(issueId, title) {
+      const body = document.getElementById('commentBody').value.trim();
+      if (!body) { showAlert('متن کامنت الزامی است'); return; }
+
+      try {
+        await api(`/api/repos/${owner}/${repo}/issues/${issueId}/comments`, {
+          method: 'POST',
+          body: { body }
+        });
+        viewIssue(issueId, title);
+      } catch (err) { showAlert(err.message); }
+    }
+
+    async function toggleIssueState(issueId, state) {
+      try {
+        await api(`/api/repos/${owner}/${repo}/issues/${issueId}/state`, {
+          method: 'PUT',
+          body: { state }
+        });
+        loadIssues();
+      } catch (err) { showAlert(err.message); }
+    }
+
+    // Search in files
+    async function searchInRepo() {
+      const query = document.getElementById('repoSearchInput').value.trim();
+      if (!query || query.length < 2) {
+        showAlert('عبارت جستجو باید حداقل ۲ کاراکتر باشد');
+        return;
+      }
+
+      const container = document.getElementById('searchResults');
+      container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+      try {
+        const results = await api(`/api/repos/${owner}/${repo}/search?q=${encodeURIComponent(query)}`);
+
+        if (results.length === 0) {
+          container.innerHTML = '<div class="empty-state"><p>نتیجه‌ای یافت نشد</p></div>';
+          return;
+        }
+
+        container.innerHTML = results.map(file => `
+          <div class="repo-card" style="margin-bottom:8px;">
+            <div class="repo-card-header">
+              <span class="file-icon">${getFileIcon(file.file_name)}</span>
+              <span class="repo-card-name" style="cursor:pointer;" onclick="viewFile('${file.file_path}')">${file.file_path}</span>
+            </div>
+            <div style="margin-top:8px; font-family:monospace; font-size:0.8rem; direction:ltr; text-align:left;">
+              ${file.matches.map(m => `
+                <div style="padding:4px 8px; background:var(--bg-primary); border-radius:4px; margin-bottom:4px;">
+                  <span style="color:var(--accent-blue);">${m.line}:</span> ${escapeHtml(m.content)}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<p class="alert alert-error">${err.message}</p>`;
+      }
+    }
+
+    // Enter key for search
+    document.addEventListener('keypress', (e) => {
+      if (e.target.id === 'repoSearchInput' && e.key === 'Enter') searchInRepo();
+    });
+
+    // Fork
+    async function forkRepo() {
+      if (!currentUser) { window.location.href = '/auth/login'; return; }
+      if (!confirm(`آیا می‌خواهید ${owner}/${repo} را fork کنید؟`)) return;
+
+      try {
+        const data = await api(`/fork/${owner}/${repo}`, { method: 'POST' });
+        showAlert(data.message, 'success');
+        setTimeout(() => { if (data.redirect) window.location.href = data.redirect; }, 1500);
+      } catch (err) { showAlert(err.message); }
+    }
+
+    // Collaborators
+    async function loadCollaborators() {
+      const container = document.getElementById('collabList');
+      if (!container) return;
+
+      try {
+        const collabs = await api(`/collaborators/${owner}/${repo}`);
+        if (collabs.length === 0) {
+          container.innerHTML = '<p style="color:var(--text-muted);">هنوز همکاری اضافه نشده</p>';
+        } else {
+          container.innerHTML = collabs.map(c => `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; background:var(--bg-primary); border-radius:var(--radius-md); margin-bottom:6px;">
+              <span><strong>${c.username}</strong> (${c.display_name || '-'}) - ${c.permission === 'read' ? 'خواندن' : c.permission === 'write' ? 'نوشتن' : 'ادمین'}</span>
+              <button class="btn btn-sm btn-danger" onclick="removeCollaborator(${c.user_id})">حذف</button>
+            </div>
+          `).join('');
+        }
+      } catch (err) { /* ignore */ }
+    }
+
+    async function addCollaborator() {
+      const username = document.getElementById('collabUsername').value.trim();
+      const permission = document.getElementById('collabPermission').value;
+      if (!username) { showAlert('نام کاربری الزامی است'); return; }
+
+      try {
+        const data = await api(`/collaborators/${owner}/${repo}`, {
+          method: 'POST',
+          body: { username, permission }
+        });
+        showAlert(data.message, 'success');
+        document.getElementById('collabUsername').value = '';
+        loadCollaborators();
+      } catch (err) { showAlert(err.message); }
+    }
+
+    async function removeCollaborator(userId) {
+      if (!confirm('آیا مطمئن هستید؟')) return;
+      try {
+        await api(`/collaborators/${owner}/${repo}/${userId}`, { method: 'DELETE' });
+        loadCollaborators();
+      } catch (err) { showAlert(err.message); }
+    }
+
+    // ===== PULL REQUESTS =====
+    async function loadPullRequests() {
+      const container = document.getElementById('tabPrs');
+      const isOwner = currentUser && currentUser.username === owner;
+      const isLoggedIn = !!currentUser;
+
+      try {
+        const prs = await api(`/pr/${owner}/${repo}`);
+
+        let html = '';
+        if (isLoggedIn) {
+          html += `
+            <div style="margin-bottom:16px; padding:16px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md);">
+              <h4 style="margin-bottom:12px;">ایجاد Pull Request</h4>
+              <input type="text" id="prTitle" placeholder="عنوان PR" class="search-input" style="width:100%; margin-bottom:8px;">
+              <textarea id="prBody" placeholder="توضیحات (اختیاری)" style="width:100%; min-height:60px; padding:10px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-primary); font-family:inherit; resize:vertical; margin-bottom:8px;"></textarea>
+              <input type="number" id="prSourceRepoId" placeholder="شناسه ریپازیتوری مبدأ (fork شما)" class="search-input" style="width:100%; margin-bottom:8px;" dir="ltr">
+              <small style="color:var(--text-muted);">شناسه ریپازیتوری fork شده خود را وارد کنید</small>
+              <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="createPR()">ایجاد PR</button>
+            </div>
+          `;
+        }
+
+        if (prs.length === 0) {
+          html += '<div class="empty-state"><p>هنوز Pull Request ای وجود ندارد</p></div>';
+        } else {
+          html += prs.map(pr => `
+            <div class="repo-card" style="margin-bottom:8px; cursor:pointer;" onclick="viewPR(${pr.id})">
+              <div class="repo-card-header">
+                <span style="color:var(--accent-green);">🔀</span>
+                <strong>${pr.title}</strong>
+                <span class="repo-card-badge" style="border-color:${pr.state === 'open' ? 'var(--accent-green)' : pr.state === 'merged' ? 'var(--accent-purple)' : 'var(--accent-red)'}; color:${pr.state === 'open' ? 'var(--accent-green)' : pr.state === 'merged' ? 'var(--accent-purple)' : 'var(--accent-red)'};">${pr.state === 'open' ? 'باز' : pr.state === 'merged' ? 'merge شده' : 'بسته'}</span>
+              </div>
+              <div class="repo-card-meta">
+                <span>توسط ${pr.author_display_name || pr.author_name}</span>
+                <span>${pr.source_owner_name}/${pr.source_repo_name} → ${owner}/${repo}</span>
+                <span>${formatDate(pr.created_at)}</span>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<p class="alert alert-error">خطا در بارگذاری</p>';
+      }
+    }
+
+    async function createPR() {
+      const title = document.getElementById('prTitle').value.trim();
+      const body = document.getElementById('prBody').value.trim();
+      const sourceRepoId = document.getElementById('prSourceRepoId').value;
+      if (!title || !sourceRepoId) { showAlert('عنوان و شناسه ریپازیتوری مبدأ الزامی است'); return; }
+
+      try {
+        await api(`/pr/${owner}/${repo}`, { method: 'POST', body: { title, body, source_repo_id: parseInt(sourceRepoId) } });
+        loadPullRequests();
+      } catch (err) { showAlert(err.message); }
+    }
+
+    async function viewPR(prId) {
+      const container = document.getElementById('tabPrs');
+      const isOwner = currentUser && currentUser.username === owner;
+
+      try {
+        const pr = await api(`/pr/${owner}/${repo}/${prId}`);
+
+        let html = `
+          <div style="margin-bottom:16px;">
+            <button class="btn btn-sm btn-outline" onclick="loadPullRequests()">← بازگشت</button>
+          </div>
+          <div style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:20px; margin-bottom:16px;">
+            <h3>${pr.title}</h3>
+            <p style="color:var(--text-secondary); margin-top:8px;">${pr.body || ''}</p>
+            <div style="margin-top:12px; font-size:0.85rem; color:var(--text-muted);">
+              ${pr.source_owner_name}/${pr.source_repo_name}:${pr.source_branch} → ${pr.target_owner_name}/${pr.target_repo_name}:${pr.target_branch}
+            </div>
+            ${pr.state === 'open' && isOwner ? `
+              <div style="margin-top:16px; display:flex; gap:8px;">
+                <button class="btn btn-sm btn-success" onclick="mergePR(${prId})">✅ Merge</button>
+                <button class="btn btn-sm btn-danger" onclick="closePR(${prId})">❌ بستن</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+
+        // Changed files
+        if (pr.changedFiles && pr.changedFiles.length > 0) {
+          html += `<h4 style="margin-bottom:8px;">فایل‌های تغییر یافته (${pr.changedFiles.length})</h4>`;
+          html += pr.changedFiles.map(f => `
+            <div style="padding:6px 12px; background:var(--bg-primary); border-radius:4px; margin-bottom:4px; font-size:0.85rem; direction:ltr;">
+              <span style="color:${f.status === 'added' ? 'var(--accent-green)' : f.status === 'deleted' ? 'var(--accent-red)' : 'var(--accent-orange)'};">
+                ${f.status === 'added' ? '+' : f.status === 'deleted' ? '-' : '~'}
+              </span> ${f.path}
+            </div>
+          `).join('');
+        }
+
+        // Comments
+        html += '<h4 style="margin:16px 0 8px;">کامنت‌ها</h4>';
+        if (pr.comments.length > 0) {
+          html += pr.comments.map(c => `
+            <div style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:12px; margin-bottom:6px;">
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;"><strong>${c.author_display_name || c.author_name}</strong> - ${formatDate(c.created_at)}</div>
+              <div style="white-space:pre-wrap;">${c.body}</div>
+            </div>
+          `).join('');
+        }
+
+        if (currentUser) {
+          html += `
+            <textarea id="prCommentBody" placeholder="کامنت..." style="width:100%; min-height:80px; padding:10px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-primary); font-family:inherit; resize:vertical; margin-top:8px;"></textarea>
+            <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="addPRComment(${prId})">ارسال</button>
+          `;
+        }
+
+        container.innerHTML = html;
+      } catch (err) { container.innerHTML = '<p class="alert alert-error">خطا</p>'; }
+    }
+
+    async function mergePR(prId) {
+      if (!confirm('آیا مطمئن هستید که می‌خواهید merge کنید؟')) return;
+      try {
+        const data = await api(`/pr/${owner}/${repo}/${prId}/merge`, { method: 'POST' });
+        showAlert(data.message, 'success');
+        setTimeout(() => location.reload(), 1500);
+      } catch (err) { showAlert(err.message); }
+    }
+
+    async function closePR(prId) {
+      try {
+        await api(`/pr/${owner}/${repo}/${prId}/close`, { method: 'POST' });
+        loadPullRequests();
+      } catch (err) { showAlert(err.message); }
+    }
+
+    async function addPRComment(prId) {
+      const body = document.getElementById('prCommentBody').value.trim();
+      if (!body) return;
+      try {
+        await api(`/pr/${owner}/${repo}/${prId}/comments`, { method: 'POST', body: { body } });
+        viewPR(prId);
+      } catch (err) { showAlert(err.message); }
+    }
+
+    // ===== RELEASES =====
+    async function loadReleases() {
+      const container = document.getElementById('tabReleases');
+      const isOwner = currentUser && currentUser.username === owner;
+
+      try {
+        const releases = await api(`/releases/${owner}/${repo}`);
+
+        let html = '';
+        if (isOwner) {
+          html += `
+            <div style="margin-bottom:16px; padding:16px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md);">
+              <h4 style="margin-bottom:12px;">ایجاد Release جدید</h4>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                <input type="text" id="relTagName" placeholder="نام تگ (مثلاً v1.0.0)" class="search-input" dir="ltr">
+                <input type="text" id="relTitle" placeholder="عنوان Release" class="search-input">
+              </div>
+              <textarea id="relBody" placeholder="توضیحات (Changelog)" style="width:100%; min-height:60px; padding:10px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-primary); font-family:inherit; resize:vertical; margin-bottom:8px;"></textarea>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input type="file" id="relAssets" multiple>
+                <button class="btn btn-primary btn-sm" onclick="createRelease()">انتشار</button>
+              </div>
+            </div>
+          `;
+        }
+
+        if (releases.length === 0) {
+          html += '<div class="empty-state"><p>هنوز Release ای وجود ندارد</p></div>';
+        } else {
+          html += releases.map(rel => `
+            <div class="repo-card" style="margin-bottom:12px;">
+              <div class="repo-card-header">
+                <span>🏷️</span>
+                <strong>${rel.title}</strong>
+                <span class="repo-card-badge">${rel.tag_name}</span>
+                ${rel.is_prerelease ? '<span class="repo-card-badge" style="border-color:var(--accent-orange); color:var(--accent-orange);">پیش‌انتشار</span>' : ''}
+              </div>
+              ${rel.body ? `<p class="repo-card-desc" style="white-space:pre-wrap;">${rel.body}</p>` : ''}
+              <div class="repo-card-meta">
+                <span>توسط ${rel.author_display_name || rel.author_name}</span>
+                <span>${formatDate(rel.created_at)}</span>
+              </div>
+              ${rel.assets && rel.assets.length > 0 ? `
+                <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color);">
+                  <strong style="font-size:0.85rem;">📎 فایل‌های پیوست:</strong>
+                  ${rel.assets.map(a => `
+                    <a href="/releases/${owner}/${repo}/assets/${a.id}/download" style="display:block; padding:6px 0; font-size:0.85rem;">
+                      📥 ${a.file_name} (${formatSize(a.size)}) - ${a.download_count} دانلود
+                    </a>
+                  `).join('')}
+                </div>
+              ` : ''}
+              ${isOwner ? `<button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteRelease(${rel.id})">حذف</button>` : ''}
+            </div>
+          `).join('');
+        }
+
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<p class="alert alert-error">خطا در بارگذاری</p>';
+      }
+    }
+
+    async function createRelease() {
+      const tag_name = document.getElementById('relTagName').value.trim();
+      const title = document.getElementById('relTitle').value.trim();
+      const body = document.getElementById('relBody').value.trim();
+      const filesInput = document.getElementById('relAssets');
+
+      if (!tag_name || !title) { showAlert('نام تگ و عنوان الزامی هستند'); return; }
+
+      const formData = new FormData();
+      formData.append('tag_name', tag_name);
+      formData.append('title', title);
+      formData.append('body', body);
+      if (filesInput.files.length > 0) {
+        for (const file of filesInput.files) {
+          formData.append('assets', file);
+        }
+      }
+
+      try {
+        const response = await fetch(`/releases/${owner}/${repo}`, { method: 'POST', body: formData });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        showAlert(data.message, 'success');
+        loadReleases();
+      } catch (err) { showAlert(err.message); }
+    }
+
+    async function deleteRelease(id) {
+      if (!confirm('آیا مطمئن هستید؟')) return;
+      try {
+        await api(`/releases/${owner}/${repo}/${id}`, { method: 'DELETE' });
+        loadReleases();
+      } catch (err) { showAlert(err.message); }
+    }
+
+    async function toggleStar() {
+      if (!currentUser) {
+        window.location.href = '/auth/login';
+        return;
+      }
+      try {
+        const data = await api(`/api/repos/${owner}/${repo}/star`, { method: 'POST' });
+        const btn = document.getElementById('starBtn');
+        const count = document.getElementById('starCount');
+        if (data.starred) {
+          btn.innerHTML = '⭐ ستاره داده شده <span id="starCount">' + (parseInt(count.textContent) + 1) + '</span>';
+        } else {
+          btn.innerHTML = '☆ ستاره <span id="starCount">' + (parseInt(count.textContent) - 1) + '</span>';
+        }
+      } catch (err) {
+        showAlert(err.message);
+      }
+    }
+
+    async function syncMirror() {
+      if (!confirm('آیا می‌خواهید ریپازیتوری را با GitHub سینک کنید؟')) return;
+      try {
+        const data = await api(`/mirror/${owner}/${repo}/sync`, { method: 'POST' });
+        showAlert(data.message, 'success');
+        setTimeout(() => location.reload(), 1500);
+      } catch (err) {
+        showAlert(err.message);
+      }
+    }
+
+    async function deleteRepo() {
+      if (!confirm('آیا مطمئن هستید؟ این عمل قابل بازگشت نیست!')) return;
+      try {
+        await api(`/repos/${owner}/${repo}`, { method: 'DELETE' });
+        window.location.href = '/dashboard';
+      } catch (err) {
+        showAlert(err.message);
+      }
+    }
+
+    async function deleteFile(filePath) {
+      if (!confirm(`آیا از حذف فایل "${filePath}" مطمئن هستید؟`)) return;
+      try {
+        const data = await api(`/api/repos/${owner}/${repo}/file/${filePath}`, { method: 'DELETE' });
+        showAlert(data.message || 'فایل حذف شد', 'success');
+        setTimeout(() => location.reload(), 1000);
+      } catch (err) {
+        showAlert(err.message);
+      }
+    }
+
+    function setupUpload() {
+      const area = document.getElementById('uploadArea');
+      const input = document.getElementById('fileInput');
+      if (!area || !input) return;
+
+      area.addEventListener('click', () => input.click());
+      area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('dragover'); });
+      area.addEventListener('dragleave', () => area.classList.remove('dragover'));
+      area.addEventListener('drop', (e) => {
+        e.preventDefault();
+        area.classList.remove('dragover');
+        uploadFiles(e.dataTransfer.files);
+      });
+      input.addEventListener('change', (e) => uploadFiles(e.target.files));
+    }
+
+    async function uploadFiles(files) {
+      if (!files.length) return;
+      const progress = document.getElementById('uploadProgress');
+      progress.style.display = 'block';
+      progress.textContent = `در حال آپلود ${files.length} فایل...`;
+
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append('files', file);
+      }
+
+      try {
+        const response = await fetch(`/repos/${owner}/${repo}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        if (response.ok) {
+          progress.textContent = data.message;
+          progress.className = 'alert alert-success';
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (err) {
+        progress.textContent = err.message;
+        progress.className = 'alert alert-error';
+      }
+    }
+
+    loadRepo();
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+node_modules/
+db/*.db
+repositories/
+git-repos/
+uploads/temp/
+uploads/releases/
+*.log
+.env

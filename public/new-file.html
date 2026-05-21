@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>فایل جدید - iPmartGit</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .editor-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .code-editor {
+      width: 100%;
+      min-height: 400px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      resize: vertical;
+      direction: ltr;
+      text-align: left;
+      tab-size: 2;
+    }
+    .code-editor:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+    .editor-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      justify-content: flex-end;
+    }
+    .file-path-input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .file-path-input span {
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .file-path-input input {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: monospace;
+      direction: ltr;
+    }
+    .file-path-input input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">
+        <img src="/assets/logo.svg" alt="iPmartGit" class="nav-logo">
+        <span>iPmartGit</span>
+      </a>
+      <div class="nav-links">
+        <a href="/dashboard" class="nav-link">داشبورد</a>
+        <a href="/auth/logout" class="nav-link">خروج</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="editor-container">
+    <h2 style="margin-bottom:20px;">📄 ایجاد فایل جدید</h2>
+
+    <div class="file-path-input">
+      <span id="repoPrefix">owner/repo /</span>
+      <input type="text" id="fileName" placeholder="path/to/file.txt" dir="ltr">
+    </div>
+
+    <textarea class="code-editor" id="codeEditor" spellcheck="false" placeholder="محتوای فایل را اینجا بنویسید..."></textarea>
+
+    <div class="editor-actions">
+      <a id="cancelBtn" href="#" class="btn btn-outline">انصراف</a>
+      <button id="createBtn" class="btn btn-primary" onclick="createFile()">📄 ایجاد فایل</button>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const owner = params.get('owner');
+    const repo = params.get('repo');
+    const editor = document.getElementById('codeEditor');
+
+    document.getElementById('repoPrefix').textContent = `${owner}/${repo} /`;
+    document.getElementById('cancelBtn').href = `/${owner}/${repo}`;
+
+    // Tab support
+    editor.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + 2;
+      }
+    });
+
+    async function createFile() {
+      const fileName = document.getElementById('fileName').value.trim();
+      if (!fileName) {
+        showAlert('نام فایل الزامی است', 'error', document.querySelector('.editor-container'));
+        return;
+      }
+
+      const btn = document.getElementById('createBtn');
+      btn.disabled = true;
+      btn.textContent = 'در حال ایجاد...';
+
+      try {
+        const data = await api(`/api/repos/${owner}/${repo}/newfile`, {
+          method: 'POST',
+          body: { file_path: fileName, content: editor.value }
+        });
+        showAlert(data.message || 'فایل ایجاد شد', 'success', document.querySelector('.editor-container'));
+        setTimeout(() => {
+          window.location.href = `/${owner}/${repo}`;
+        }, 1000);
+      } catch (err) {
+        showAlert(err.message, 'error', document.querySelector('.editor-container'));
+        btn.textContent = '📄 ایجاد فایل';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

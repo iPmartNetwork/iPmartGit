@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>میرور از GitHub - iPmartGit</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">
+        <img src="/assets/logo.svg" alt="iPmartGit" class="nav-logo">
+        <span>iPmartGit</span>
+      </a>
+      <div class="nav-links">
+        <a href="/dashboard" class="nav-link">داشبورد</a>
+        <a href="/repos/new" class="nav-link btn-outline">+ جدید</a>
+        <a href="/auth/logout" class="nav-link">خروج</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="form-container" style="max-width:600px;">
+    <div class="form-card">
+      <h2>🔄 میرور از GitHub</h2>
+      <p style="color:var(--text-secondary); margin-bottom:20px; text-align:center;">
+        یک ریپازیتوری GitHub را به صورت محلی کپی کنید
+      </p>
+      <form id="mirrorForm">
+        <div class="form-group">
+          <label for="github_url">آدرس GitHub *</label>
+          <input type="url" id="github_url" name="github_url" required 
+            placeholder="https://github.com/username/repository" dir="ltr">
+          <small style="color:var(--text-muted);">آدرس کامل ریپازیتوری GitHub</small>
+        </div>
+        <div class="form-group">
+          <label for="name">نام محلی (اختیاری)</label>
+          <input type="text" id="name" name="name" pattern="[a-zA-Z0-9_.\-]+" 
+            placeholder="اگر خالی باشد از نام GitHub استفاده می‌شود" dir="ltr">
+        </div>
+        <div class="form-group">
+          <label for="description">توضیحات</label>
+          <textarea id="description" name="description" rows="2" placeholder="اختیاری"></textarea>
+        </div>
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input type="checkbox" id="is_private" name="is_private">
+            <label for="is_private">خصوصی</label>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:10px;" id="submitBtn">
+          ایجاد میرور
+        </button>
+      </form>
+
+      <div class="alert alert-info" style="margin-top:20px;">
+        <strong>توجه:</strong> برای میرور از GitHub نیاز به دسترسی اینترنت بین‌المللی (حداقل یک‌بار) دارید. 
+        پس از میرور، فایل‌ها به صورت محلی ذخیره می‌شوند و نیازی به اینترنت نیست.
+        اگر دسترسی ندارید، می‌توانید فایل‌ها را دستی آپلود کنید.
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.getElementById('mirrorForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'در حال میرور...';
+
+      const github_url = document.getElementById('github_url').value;
+      const name = document.getElementById('name').value;
+      const description = document.getElementById('description').value;
+      const is_private = document.getElementById('is_private').checked;
+
+      try {
+        const data = await api('/mirror/github', {
+          method: 'POST',
+          body: { github_url, name, description, is_private }
+        });
+        showAlert(data.message, 'success');
+        setTimeout(() => {
+          if (data.redirect) window.location.href = data.redirect;
+        }, 1500);
+      } catch (err) {
+        showAlert(err.message);
+        btn.disabled = false;
+        btn.textContent = 'ایجاد میرور';
+      }
+    });
+  </script>
+</body>
+</html>

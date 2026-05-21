@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>داشبورد - iPmartGit</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">
+        <img src="/assets/logo.svg" alt="iPmartGit" class="nav-logo">
+        <span>iPmartGit</span>
+      </a>
+      <div class="nav-search">
+        <input type="text" id="searchInput" placeholder="جستجوی ریپازیتوری..." class="search-input">
+      </div>
+      <div class="nav-links">
+        <a href="/explore" class="nav-link">کاوش</a>
+        <a href="/repos/new" class="nav-link btn-outline">+ جدید</a>
+        <a href="/mirror" class="nav-link">میرور</a>
+        <a href="#" class="nav-link" id="notifLink" onclick="toggleNotifications()" style="position:relative;">🔔<span id="notifBadge" style="display:none; position:absolute; top:-4px; left:-4px; background:var(--accent-red); color:#fff; border-radius:50%; width:16px; height:16px; font-size:0.65rem; display:flex; align-items:center; justify-content:center;"></span></a>
+        <a href="/settings" class="nav-link">⚙️</a>
+        <a href="/auth/logout" class="nav-link">خروج</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard">
+    <div class="dashboard-header">
+      <h1 id="welcomeMsg">داشبورد</h1>
+      <div>
+        <a href="/repos/new" class="btn btn-primary">+ ریپازیتوری جدید</a>
+        <a href="/mirror" class="btn btn-outline">🔄 میرور از GitHub</a>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;">
+      <a href="/repos/new" class="btn btn-sm btn-outline">📦 ریپازیتوری جدید</a>
+      <a href="/mirror" class="btn btn-sm btn-outline">🔄 میرور</a>
+      <button class="btn btn-sm btn-outline" onclick="showOrgModal()">🏢 سازمان جدید</button>
+      <button class="btn btn-sm btn-outline" onclick="showImportModal()">📥 وارد کردن</button>
+    </div>
+
+    <!-- Organizations -->
+    <div id="orgSection" style="display:none; margin-bottom:24px;">
+      <h3 style="margin-bottom:12px;">🏢 سازمان‌ها</h3>
+      <div id="orgList" class="repo-list"></div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div style="display:grid; grid-template-columns:1fr 300px; gap:24px;">
+      <div>
+        <h3 style="margin-bottom:12px;">ریپازیتوری‌ها</h3>
+        <div id="repoList" class="repo-list">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+        <div id="emptyState" class="empty-state" style="display:none;">
+          <h3>هنوز ریپازیتوری ندارید</h3>
+          <p>اولین ریپازیتوری خود را ایجاد کنید یا از GitHub میرور بگیرید</p>
+          <div style="margin-top:20px; display:flex; gap:12px; justify-content:center;">
+            <a href="/repos/new" class="btn btn-primary">ایجاد ریپازیتوری</a>
+            <a href="/mirror" class="btn btn-outline">میرور از GitHub</a>
+          </div>
+        </div>
+      </div>
+      <aside>
+        <h3 style="margin-bottom:12px;">📰 فعالیت‌ها</h3>
+        <div id="activityFeed" style="font-size:0.85rem;"></div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    async function loadDashboard() {
+      try {
+        const user = await api('/auth/profile');
+        document.getElementById('welcomeMsg').textContent = `سلام ${user.display_name || user.username} 👋`;
+
+        // Show admin link
+        if (user.is_admin) {
+          document.querySelector('.dashboard-header div').innerHTML += ' <a href="/admin" class="btn btn-outline">🛡️ پنل ادمین</a>';
+        }
+
+        const repos = await api(`/api/user/${user.username}/repos`);
+        const repoList = document.getElementById('repoList');
+
+        if (repos.length === 0) {
+          repoList.style.display = 'none';
+          document.getElementById('emptyState').style.display = 'block';
+          return;
+        }
+
+        repoList.innerHTML = repos.map(repo => `
+          <a href="/${repo.owner_name}/${repo.name}" class="repo-card" style="text-decoration:none; color:inherit;">
+            <div class="repo-card-header">
+              <span class="repo-card-name">${repo.owner_name}/${repo.name}</span>
+              ${repo.is_private ? '<span class="repo-card-badge private">خصوصی</span>' : ''}
+              ${repo.is_mirror ? '<span class="repo-card-badge mirror">میرور</span>' : ''}
+            </div>
+            ${repo.description ? `<p class="repo-card-desc">${repo.description}</p>` : ''}
+            <div class="repo-card-meta">
+              ${repo.language ? `<span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${getLanguageColor(repo.language)}"></span> ${repo.language}</span>` : ''}
+              <span>⭐ ${repo.stars}</span>
+              <span>📦 ${formatSize(repo.size)}</span>
+              <span>${formatDate(repo.updated_at)}</span>
+            </div>
+          </a>
+        `).join('');
+      } catch (err) {
+        window.location.href = '/auth/login';
+      }
+    }
+
+    loadDashboard();
+
+    // Notifications
+    async function loadNotifications() {
+      try {
+        const data = await api('/notifications');
+        const badge = document.getElementById('notifBadge');
+        if (data.unreadCount > 0) {
+          badge.style.display = 'flex';
+          badge.textContent = data.unreadCount;
+        }
+      } catch(e) {}
+    }
+
+    async function toggleNotifications() {
+      try {
+        const data = await api('/notifications');
+        const notifs = data.notifications;
+
+        let html = '<div style="position:fixed; top:60px; left:20px; width:350px; max-height:400px; overflow-y:auto; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:var(--shadow); z-index:1000; padding:12px;">';
+        html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;"><strong>اعلان‌ها</strong><button class="btn btn-sm btn-outline" onclick="markAllRead()">خواندم</button></div>';
+
+        if (notifs.length === 0) {
+          html += '<p style="color:var(--text-muted); text-align:center; padding:20px;">اعلانی ندارید</p>';
+        } else {
+          html += notifs.slice(0, 10).map(n => `
+            <div style="padding:10px; border-bottom:1px solid var(--border-color); opacity:${n.is_read ? '0.6' : '1'};">
+              <div style="font-size:0.85rem; font-weight:${n.is_read ? '400' : '600'};">${n.title}</div>
+              <div style="font-size:0.8rem; color:var(--text-muted);">${n.message} - ${formatDate(n.created_at)}</div>
+            </div>
+          `).join('');
+        }
+        html += '</div>';
+
+        // Remove existing popup
+        const existing = document.getElementById('notifPopup');
+        if (existing) { existing.remove(); return; }
+
+        const popup = document.createElement('div');
+        popup.id = 'notifPopup';
+        popup.innerHTML = html;
+        document.body.appendChild(popup);
+
+        // Close on click outside
+        setTimeout(() => {
+          document.addEventListener('click', function closeNotif(e) {
+            if (!popup.contains(e.target) && e.target.id !== 'notifLink') {
+              popup.remove();
+              document.removeEventListener('click', closeNotif);
+            }
+          });
+        }, 100);
+      } catch(e) {}
+    }
+
+    async function markAllRead() {
+      try {
+        await api('/notifications/read-all', { method: 'PUT' });
+        document.getElementById('notifBadge').style.display = 'none';
+        const popup = document.getElementById('notifPopup');
+        if (popup) popup.remove();
+      } catch(e) {}
+    }
+
+    loadNotifications();
+
+    // Load organizations
+    async function loadOrgs() {
+      try {
+        const orgs = await api('/org');
+        if (orgs.length > 0) {
+          document.getElementById('orgSection').style.display = 'block';
+          document.getElementById('orgList').innerHTML = orgs.map(o => `
+            <a href="/org/${o.name}" class="repo-card" style="text-decoration:none; color:inherit; padding:12px;">
+              <div class="repo-card-header">
+                <span>🏢</span>
+                <span class="repo-card-name">${o.display_name || o.name}</span>
+                <span class="repo-card-badge">${o.role}</span>
+              </div>
+              <div class="repo-card-meta">
+                <span>👥 ${o.member_count} عضو</span>
+                <span>📦 ${o.repo_count} ریپازیتوری</span>
+              </div>
+            </a>
+          `).join('');
+        }
+      } catch(e) {}
+    }
+
+    // Load activity feed
+    async function loadActivityFeed() {
+      try {
+        const activities = await api('/activity/feed');
+        const container = document.getElementById('activityFeed');
+        if (activities.length === 0) {
+          container.innerHTML = '<p style="color:var(--text-muted);">هنوز فعالیتی ثبت نشده</p>';
+        } else {
+          container.innerHTML = activities.slice(0, 15).map(a => `
+            <div style="padding:8px 0; border-bottom:1px solid var(--border-color);">
+              <div style="color:var(--text-secondary);">
+                <strong>${a.actor_display_name || a.actor_name}</strong>
+              </div>
+              <div style="color:var(--text-muted); font-size:0.8rem;">${a.message} - ${formatDate(a.created_at)}</div>
+            </div>
+          `).join('');
+        }
+      } catch(e) {
+        document.getElementById('activityFeed').innerHTML = '<p style="color:var(--text-muted);">خطا در بارگذاری</p>';
+      }
+    }
+
+    // Create organization modal
+    function showOrgModal() {
+      const name = prompt('نام سازمان (انگلیسی):');
+      if (!name) return;
+      const displayName = prompt('نام نمایشی (اختیاری):') || name;
+
+      api('/org', { method: 'POST', body: { name, display_name: displayName } })
+        .then(data => { showAlert(data.message, 'success'); loadOrgs(); })
+        .catch(err => showAlert(err.message));
+    }
+
+    // Import modal
+    function showImportModal() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+          const response = await fetch('/transfer/import', { method: 'POST', body: formData });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error);
+          showAlert(data.message, 'success');
+          setTimeout(() => { if (data.redirect) window.location.href = data.redirect; }, 1500);
+        } catch (err) { showAlert(err.message); }
+      };
+      input.click();
+    }
+
+    loadOrgs();
+    loadActivityFeed();
+  </script>
+</body>
+</html>

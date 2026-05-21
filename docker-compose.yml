@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  ipmartgit:
+    build: .
+    container_name: ipmartgit
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SESSION_SECRET=${SESSION_SECRET:-ipmartgit-change-this-secret-in-production}
+    volumes:
+      - ./data/db:/app/db
+      - ./data/repositories:/app/repositories
+      - ./data/git-repos:/app/git-repos
+      - ./data/uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: ipmartgit-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - ipmartgit
+    profiles:
+      - with-nginx
