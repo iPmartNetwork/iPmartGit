@@ -5,7 +5,8 @@
 #  Compatible: Ubuntu 20/22/24, Debian 11/12
 # ============================================
 
-set -e
+# Don't exit on error - we handle errors manually
+# set -e
 
 # ============ CONFIGURATION ============
 APP_NAME="iPmartGit"
@@ -184,18 +185,17 @@ do_install() {
   # Step 1: System dependencies
   log_step 1 "Installing system dependencies..."
 
-  # Try to use Iran apt mirror if default fails
-  if ! apt-get update -qq > /dev/null 2>&1; then
-    log_warn "Default apt mirror failed. Trying Iran mirror..."
-    if [ -f /etc/apt/sources.list ]; then
+  # Set Iran apt mirror first for faster downloads
+  if [ -f /etc/apt/sources.list ]; then
+    if ! grep -q "ir.archive.ubuntu.com" /etc/apt/sources.list 2>/dev/null; then
       cp /etc/apt/sources.list /etc/apt/sources.list.backup
       sed -i 's|http://archive.ubuntu.com|http://ir.archive.ubuntu.com|g' /etc/apt/sources.list 2>/dev/null
       sed -i 's|http://security.ubuntu.com|http://ir.archive.ubuntu.com|g' /etc/apt/sources.list 2>/dev/null
-      apt-get update -qq > /dev/null 2>&1
     fi
   fi
 
-  apt-get install -y -qq curl git build-essential nginx openssl unzip > /dev/null 2>&1
+  apt-get update -qq > /dev/null 2>&1 || true
+  apt-get install -y curl git build-essential nginx openssl unzip 2>&1 | tail -3
   log_ok "System dependencies installed"
 
   # Step 2: Node.js
