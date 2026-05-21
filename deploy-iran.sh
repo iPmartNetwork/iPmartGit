@@ -40,22 +40,22 @@ WHITE='\033[1;37m'
 print_banner() {
   clear
   echo ""
-  echo -e "${INDIGO}    ┌──────────────────────────────────────────────────────────────────┐${NC}"
-  echo -e "${INDIGO}    │${NC}                                                                  ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${PINK}██╗${LAVENDER}██████╗ ${PINK}███╗   ███╗${LAVENDER}█████╗ ${PINK}██████╗ ${LAVENDER}████████╗${NC}            ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██╔══██╗${PINK}████╗ ████║${LAVENDER}██╔══██╗${PINK}██╔══██╗${LAVENDER}╚══██╔══╝${NC}            ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██████╔╝${PINK}██╔████╔██║${LAVENDER}███████║${PINK}██████╔╝${LAVENDER}   ██║   ${NC}            ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██╔═══╝ ${PINK}██║╚██╔╝██║${LAVENDER}██╔══██║${PINK}██╔══██╗${LAVENDER}   ██║   ${NC}            ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██║     ${PINK}██║ ╚═╝ ██║${LAVENDER}██║  ██║${PINK}██║  ██║${LAVENDER}   ██║   ${NC}            ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${PINK}╚═╝${LAVENDER}╚═╝     ${PINK}╚═╝     ╚═╝${LAVENDER}╚═╝  ╚═╝${PINK}╚═╝  ╚═╝${LAVENDER}   ╚═╝   ${NC}            ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}                          ${SKYBLUE}╔═╗╦╔╦╗${NC}                              ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}                          ${SKYBLUE}║ ╦║ ║ ${NC}                              ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}                          ${SKYBLUE}╚═╝╩ ╩ ${NC}                              ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}                                                                  ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${WHITE}Self-hosted Git Platform${NC}                  ${GRAY}v1.0.0${NC}             ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${LAVENDER}github.com/iPmartNetwork/iPmartGit${NC}                             ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}                                                                  ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    └──────────────────────────────────────────────────────────────────┘${NC}"
+  echo -e "${INDIGO}    ┌────────────────────────────────────────────────────────┐${NC}"
+  echo -e "${INDIGO}    │${NC}                                                        ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}██╗${LAVENDER}██████╗ ${PINK}███╗   ███╗${LAVENDER}█████╗ ${PINK}██████╗ ${LAVENDER}████████╗${NC}  ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██╔══██╗${PINK}████╗ ████║${LAVENDER}██╔══██╗${PINK}██╔══██╗${LAVENDER}╚══██╔══╝${NC}  ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██████╔╝${PINK}██╔████╔██║${LAVENDER}███████║${PINK}██████╔╝${LAVENDER}   ██║   ${NC}  ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██╔═══╝ ${PINK}██║╚██╔╝██║${LAVENDER}██╔══██║${PINK}██╔══██╗${LAVENDER}   ██║   ${NC}  ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██║     ${PINK}██║ ╚═╝ ██║${LAVENDER}██║  ██║${PINK}██║  ██║${LAVENDER}   ██║   ${NC}  ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}╚═╝${LAVENDER}╚═╝     ${PINK}╚═╝     ╚═╝${LAVENDER}╚═╝  ╚═╝${PINK}╚═╝  ╚═╝${LAVENDER}   ╚═╝   ${NC}  ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}                    ${SKYBLUE}╔═╗╦╔╦╗${NC}                           ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}                    ${SKYBLUE}║ ╦║ ║ ${NC}                           ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}                    ${SKYBLUE}╚═╝╩ ╩ ${NC}                           ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}                                                        ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${WHITE}Self-hosted Git Platform${NC}            ${GRAY}v1.0.0${NC}         ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${LAVENDER}github.com/iPmartNetwork/iPmartGit${NC}                 ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}                                                        ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    └────────────────────────────────────────────────────────┘${NC}"
   echo ""
 }
 
@@ -219,15 +219,19 @@ do_install() {
   log_step 5 "Installing npm dependencies (this may take a few minutes)..."
   cd "$APP_DIR"
   install_npm_deps
-  su - "$APP_USER" -c "cd $APP_DIR && node scripts/setup.js"
-  log_ok "Dependencies installed and database initialized"
+  if [ -d "$APP_DIR/node_modules/express" ]; then
+    su - "$APP_USER" -c "cd $APP_DIR && node scripts/setup.js" 2>&1 | tail -5
+    log_ok "Dependencies installed and database initialized"
+  else
+    log_warn "node_modules incomplete - continuing with service setup"
+  fi
 
-  # Step 6: Create systemd service
+  # Step 6: Create systemd service (ALWAYS run this)
   log_step 6 "Creating systemd service..."
   create_service "$PORT"
   log_ok "Service created and started"
 
-  # Step 7: Configure Nginx
+  # Step 7: Configure Nginx (ALWAYS run this)
   log_step 7 "Configuring Nginx..."
   configure_nginx "$DOMAIN" "$PORT"
   log_ok "Nginx configured"
@@ -555,7 +559,7 @@ do_change_domain_port() {
 # ============ SSL CERTIFICATE ============
 do_ssl() {
   print_banner
-  echo -e "  ${BOLD}SSL Certificate (Let's Encrypt)${NC}"
+  echo -e "  ${BOLD}SSL Certificate${NC}"
   echo ""
 
   # Check if domain is set
@@ -570,10 +574,31 @@ do_ssl() {
     return
   fi
 
-  echo -e "  Domain: ${CYAN}$current_domain${NC}"
+  echo -e "  Domain: ${SKYBLUE}$current_domain${NC}"
+  echo ""
+  echo -e "  ${LAVENDER}Select SSL method:${NC}"
+  echo -e "  ${GRAY}─────────────────────────────────────────${NC}"
+  echo -e "    ${MINT}1)${NC}  Let's Encrypt (automatic - needs internet)"
+  echo -e "    ${SKYBLUE}2)${NC}  Manual Certificate (upload your own cert files)"
+  echo -e "    ${GRAY}0)${NC}  Back"
+  echo ""
+  echo -ne "  ${LAVENDER}▶ ${NC}Enter option: "
+  read -r ssl_method
+
+  case $ssl_method in
+    1) do_ssl_letsencrypt "$current_domain" ;;
+    2) do_ssl_manual "$current_domain" ;;
+    0) show_menu; return ;;
+    *) log_error "Invalid option"; sleep 1; show_menu ;;
+  esac
+}
+
+# SSL Method 1: Let's Encrypt
+do_ssl_letsencrypt() {
+  local domain=$1
   echo ""
   echo -e "  ${YELLOW}Make sure:${NC}"
-  echo -e "  • DNS A record points to ${CYAN}$(get_ip)${NC}"
+  echo -e "  • DNS A record points to ${SKYBLUE}$(get_ip)${NC}"
   echo -e "  • Port 80 is open (for verification)"
   echo ""
   echo -ne "  Enter email for SSL notifications (or press Enter to skip): "
@@ -593,13 +618,13 @@ do_ssl() {
     email_flag="--register-unsafely-without-email"
   fi
 
-  if certbot --nginx -d "$current_domain" $email_flag --agree-tos --non-interactive --redirect; then
+  if certbot --nginx -d "$domain" $email_flag --agree-tos --non-interactive --redirect; then
     echo ""
     log_ok "SSL certificate installed successfully!"
-    echo -e "  Your site is now available at: ${CYAN}https://$current_domain${NC}"
+    echo -e "  Your site is now available at: ${SKYBLUE}https://$domain${NC}"
     echo ""
     echo -e "  Certificate auto-renews via systemd timer."
-    echo -e "  Manual renewal: ${CYAN}certbot renew${NC}"
+    echo -e "  Manual renewal: ${SKYBLUE}certbot renew${NC}"
   else
     echo ""
     log_error "SSL certificate installation failed."
@@ -607,6 +632,105 @@ do_ssl() {
     echo -e "  • DNS not pointing to this server"
     echo -e "  • Port 80 blocked by firewall"
     echo -e "  • Domain not reachable from internet"
+    echo ""
+    echo -e "  ${LAVENDER}Try option 2 (Manual Certificate) instead.${NC}"
+  fi
+
+  echo ""
+  echo -ne "  Press Enter to return to menu..."
+  read -r
+  show_menu
+}
+
+# SSL Method 2: Manual Certificate
+do_ssl_manual() {
+  local domain=$1
+  echo ""
+  echo -e "  ${LAVENDER}Manual SSL Certificate${NC}"
+  echo -e "  ${GRAY}─────────────────────────────────────────${NC}"
+  echo ""
+  echo -e "  Upload your certificate files to the server first."
+  echo -e "  Example paths:"
+  echo -e "    ${SKYBLUE}/etc/ssl/certs/ipmartgit.crt${NC}  (fullchain)"
+  echo -e "    ${SKYBLUE}/etc/ssl/private/ipmartgit.key${NC} (private key)"
+  echo ""
+  echo -ne "  Enter fullchain certificate path: "
+  read -r cert_path
+  echo -ne "  Enter private key path: "
+  read -r key_path
+
+  # Validate files exist
+  if [ ! -f "$cert_path" ]; then
+    log_error "Certificate file not found: $cert_path"
+    echo -ne "  Press Enter to return to menu..."
+    read -r
+    show_menu
+    return
+  fi
+
+  if [ ! -f "$key_path" ]; then
+    log_error "Private key file not found: $key_path"
+    echo -ne "  Press Enter to return to menu..."
+    read -r
+    show_menu
+    return
+  fi
+
+  # Get current port
+  local port=$(grep "PORT=" "/etc/systemd/system/$APP_SERVICE.service" 2>/dev/null | grep -oP '\d+' | head -1)
+  port=${port:-$DEFAULT_PORT}
+
+  # Update Nginx config with SSL
+  cat > /etc/nginx/sites-available/ipmartgit << EOF
+server {
+    listen 80;
+    server_name $domain;
+    return 301 https://\$host\$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name $domain;
+
+    ssl_certificate $cert_path;
+    ssl_certificate_key $key_path;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    client_max_body_size 200M;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    location / {
+        proxy_pass http://127.0.0.1:$port;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}
+EOF
+
+  if nginx -t 2>/dev/null; then
+    systemctl reload nginx
+    echo ""
+    log_ok "SSL configured successfully!"
+    echo -e "  Your site is now available at: ${SKYBLUE}https://$domain${NC}"
+    echo ""
+    echo -e "  ${ORANGE}Note: Remember to renew your certificate before it expires.${NC}"
+  else
+    log_error "Nginx config test failed. Check certificate paths."
+    # Restore non-SSL config
+    configure_nginx "$domain" "$port"
   fi
 
   echo ""
