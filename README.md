@@ -16,6 +16,8 @@ A self-hosted Git platform built for teams who need full control over their sour
 
 [Quick Start](#-quick-start) · [Features](#-features) · [Deploy](#-deploy-on-server) · [Docker](#-docker) · [API](#-api) · [Contributing](#-contributing)
 
+**[🇮🇷 مستندات فارسی](README-FA.md)**
+
 ---
 
 <img src="img/iPmartGit.png" width="500" alt="iPmartGit Logo">
