@@ -183,8 +183,19 @@ do_install() {
 
   # Step 1: System dependencies
   log_step 1 "Installing system dependencies..."
-  apt-get update -qq > /dev/null 2>&1
-  apt-get install -y -qq curl git build-essential nginx openssl > /dev/null 2>&1
+
+  # Try to use Iran apt mirror if default fails
+  if ! apt-get update -qq > /dev/null 2>&1; then
+    log_warn "Default apt mirror failed. Trying Iran mirror..."
+    if [ -f /etc/apt/sources.list ]; then
+      cp /etc/apt/sources.list /etc/apt/sources.list.backup
+      sed -i 's|http://archive.ubuntu.com|http://ir.archive.ubuntu.com|g' /etc/apt/sources.list 2>/dev/null
+      sed -i 's|http://security.ubuntu.com|http://ir.archive.ubuntu.com|g' /etc/apt/sources.list 2>/dev/null
+      apt-get update -qq > /dev/null 2>&1
+    fi
+  fi
+
+  apt-get install -y -qq curl git build-essential nginx openssl unzip > /dev/null 2>&1
   log_ok "System dependencies installed"
 
   # Step 2: Node.js
@@ -706,16 +717,51 @@ install_nodejs() {
     fi
   fi
 
-  if curl -fsSL --connect-timeout 15 https://deb.nodesource.com/setup_20.x 2>/dev/null | bash - > /dev/null 2>&1; then
+  log_info "Trying to install Node.js 20..."
+
+  # Method 1: NodeSource (official)
+  if curl -fsSL --connect-timeout 10 https://deb.nodesource.com/setup_20.x 2>/dev/null | bash - > /dev/null 2>&1; then
     apt-get install -y -qq nodejs > /dev/null 2>&1
-  else
-    log_warn "NodeSource not reachable, trying alternative..."
-    apt-get install -y -qq nodejs npm > /dev/null 2>&1
-    if ! command -v node &>/dev/null; then
-      log_error "Failed to install Node.js. Please install manually."
-      exit 1
-    fi
+    if command -v node &>/dev/null; then return 0; fi
   fi
+
+  # Method 2: Download binary from Node.js mirrors
+  log_warn "NodeSource failed. Trying binary download..."
+  local NODE_VERSION="20.11.0"
+  local ARCH=$(dpkg --print-architecture)
+  local NODE_ARCH="x64"
+  [ "$ARCH" = "arm64" ] && NODE_ARCH="arm64"
+  [ "$ARCH" = "armhf" ] && NODE_ARCH="armv7l"
+
+  local TARBALL="node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz"
+  local NODE_URLS=(
+    "https://nodejs.org/dist/v${NODE_VERSION}/${TARBALL}"
+    "https://npmmirror.com/mirrors/node/v${NODE_VERSION}/${TARBALL}"
+    "https://mirrors.tuna.tsinghua.edu.cn/nodejs-release/v${NODE_VERSION}/${TARBALL}"
+  )
+
+  for url in "${NODE_URLS[@]}"; do
+    log_info "Downloading Node.js from: $url"
+    if curl -fsSL --connect-timeout 15 -o "/tmp/$TARBALL" "$url" 2>/dev/null; then
+      tar -xf "/tmp/$TARBALL" -C /usr/local --strip-components=1
+      rm -f "/tmp/$TARBALL"
+      if command -v node &>/dev/null; then
+        return 0
+      fi
+    fi
+  done
+
+  # Method 3: System package manager (older version but works)
+  log_warn "Binary download failed. Trying system package..."
+  apt-get install -y -qq nodejs npm > /dev/null 2>&1
+  if command -v node &>/dev/null; then
+    return 0
+  fi
+
+  log_error "Failed to install Node.js. Please install manually:"
+  echo -e "    Download from: https://nodejs.org/dist/v${NODE_VERSION}/${TARBALL}"
+  echo -e "    Then: tar -xf ${TARBALL} -C /usr/local --strip-components=1"
+  exit 1
 }
 
 install_npm_deps() {
@@ -814,16 +860,52 @@ download_project() {
   elif [ -f "$APP_DIR/package.json" ]; then
     log_info "Project files already exist"
   else
-    # Clone from GitHub
-    log_info "Cloning from GitHub..."
+    # Clone from GitHub (try multiple methods)
+    log_info "Downloading project files..."
     rm -rf /tmp/iPmartGit
+
+    local clone_success=false
+
+    # Method 1: Git clone (direct)
     if git clone "$APP_REPO" /tmp/iPmartGit 2>/dev/null; then
+      clone_success=true
+    fi
+
+    # Method 2: Git clone via ghproxy mirror
+    if [ "$clone_success" = false ]; then
+      log_warn "Direct GitHub failed. Trying mirror..."
+      if git clone "https://ghproxy.com/$APP_REPO" /tmp/iPmartGit 2>/dev/null; then
+        clone_success=true
+      fi
+    fi
+
+    # Method 3: Download ZIP archive
+    if [ "$clone_success" = false ]; then
+      log_warn "Git clone failed. Trying ZIP download..."
+      local ZIP_URLS=(
+        "https://github.com/iPmartNetwork/iPmartGit/archive/refs/heads/master.zip"
+        "https://ghproxy.com/https://github.com/iPmartNetwork/iPmartGit/archive/refs/heads/master.zip"
+      )
+      for zip_url in "${ZIP_URLS[@]}"; do
+        if curl -fsSL --connect-timeout 20 -o /tmp/ipmartgit.zip "$zip_url" 2>/dev/null; then
+          apt-get install -y -qq unzip > /dev/null 2>&1
+          unzip -q /tmp/ipmartgit.zip -d /tmp/ 2>/dev/null
+          mv /tmp/iPmartGit-master /tmp/iPmartGit 2>/dev/null
+          rm -f /tmp/ipmartgit.zip
+          clone_success=true
+          break
+        fi
+      done
+    fi
+
+    if [ "$clone_success" = true ] && [ -d "/tmp/iPmartGit" ]; then
       cp -r /tmp/iPmartGit/* "$APP_DIR/"
       cp /tmp/iPmartGit/.gitignore "$APP_DIR/" 2>/dev/null || true
       cp /tmp/iPmartGit/.dockerignore "$APP_DIR/" 2>/dev/null || true
       rm -rf /tmp/iPmartGit
     else
-      log_error "Failed to clone repository. Check internet connection."
+      log_error "Failed to download project. Please upload files manually to $APP_DIR"
+      echo -e "    ${ORANGE}scp -r iPmartGit/* root@SERVER:$APP_DIR/${NC}"
       exit 1
     fi
   fi
