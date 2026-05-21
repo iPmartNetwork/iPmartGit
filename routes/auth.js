@@ -110,10 +110,24 @@ router.get('/profile', (req, res) => {
 router.put('/profile', (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: 'وارد نشده‌اید' });
 
-  const { display_name, email, bio } = req.body;
+  const { username, display_name, email, bio } = req.body;
 
   if (!email) {
     return res.status(400).json({ error: 'ایمیل الزامی است' });
+  }
+
+  // Validate username if changed
+  if (username && username !== req.session.user.username) {
+    if (username.length < 3 || username.length > 30) {
+      return res.status(400).json({ error: 'نام کاربری باید بین ۳ تا ۳۰ کاراکتر باشد' });
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      return res.status(400).json({ error: 'نام کاربری فقط حروف انگلیسی، اعداد، خط تیره و زیرخط' });
+    }
+    const usernameExists = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, req.session.user.id);
+    if (usernameExists) {
+      return res.status(409).json({ error: 'این نام کاربری قبلاً استفاده شده' });
+    }
   }
 
   // Check if email is taken by another user
@@ -122,11 +136,14 @@ router.put('/profile', (req, res) => {
     return res.status(409).json({ error: 'این ایمیل قبلاً استفاده شده است' });
   }
 
+  const newUsername = (username && username !== req.session.user.username) ? username : req.session.user.username;
+
   try {
-    db.prepare('UPDATE users SET display_name = ?, email = ?, bio = ? WHERE id = ?')
-      .run(display_name || '', email, bio || '', req.session.user.id);
+    db.prepare('UPDATE users SET username = ?, display_name = ?, email = ?, bio = ? WHERE id = ?')
+      .run(newUsername, display_name || '', email, bio || '', req.session.user.id);
 
     // Update session
+    req.session.user.username = newUsername;
     req.session.user.display_name = display_name || '';
     req.session.user.email = email;
     req.session.user.bio = bio || '';
