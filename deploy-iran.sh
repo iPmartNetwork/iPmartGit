@@ -768,7 +768,7 @@ install_npm_deps() {
   cd "$APP_DIR"
 
   # If node_modules already exists and is valid, skip
-  if [ -d "$APP_DIR/node_modules/express" ] && [ -d "$APP_DIR/node_modules/better-sqlite3" ]; then
+  if [ -d "$APP_DIR/node_modules/express" ] && [ -d "$APP_DIR/node_modules/sql.js" ]; then
     log_ok "Dependencies already installed"
     return 0
   fi
@@ -829,7 +829,7 @@ install_npm_deps() {
       su - "$APP_USER" -c "cd $APP_DIR && npm config set strict-ssl false" 2>/dev/null
 
       if su - "$APP_USER" -c "cd $APP_DIR && npm install --production --loglevel=error" 2>&1 | tail -5; then
-        if [ -d "$APP_DIR/node_modules/express" ] && [ -d "$APP_DIR/node_modules/better-sqlite3" ]; then
+        if [ -d "$APP_DIR/node_modules/express" ]; then
           success=true
           log_ok "npm install successful using $registry"
           break
