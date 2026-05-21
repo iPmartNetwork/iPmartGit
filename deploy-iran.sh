@@ -195,7 +195,7 @@ do_install() {
   fi
 
   apt-get update -qq > /dev/null 2>&1 || true
-  apt-get install -y curl git build-essential nginx openssl unzip 2>&1 | tail -3
+  apt-get install -y curl git build-essential nginx openssl unzip python3 make g++ 2>&1 | tail -3
   log_ok "System dependencies installed"
 
   # Step 2: Node.js
