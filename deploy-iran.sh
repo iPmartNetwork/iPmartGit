@@ -39,16 +39,22 @@ WHITE='\033[1;37m'
 print_banner() {
   clear
   echo ""
-  echo -e "${INDIGO}    ┌─────────────────────────────────────────────────────────┐${NC}"
-  echo -e "${INDIGO}    │${NC}                                                         ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${PINK}╦${LAVENDER}╔═╗${PINK}╔╦╗${LAVENDER}╔═╗${PINK}╦═╗${LAVENDER}╔╦╗${NC}  ${SKYBLUE}╔═╗${MINT}╦${SKYBLUE}╔╦╗${NC}                        ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${PINK}║${LAVENDER}╠═╝${PINK}║║║${LAVENDER}╠═╣${PINK}╠╦╝${LAVENDER} ║ ${NC}  ${SKYBLUE}║ ╦${MINT}║${SKYBLUE} ║ ${NC}                        ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${PINK}╩${LAVENDER}╩  ${PINK}╩ ╩${LAVENDER}╩ ╩${PINK}╩╚═${LAVENDER} ╩ ${NC}  ${SKYBLUE}╚═╝${MINT}╩${SKYBLUE} ╩ ${NC}                        ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}                                                         ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${WHITE}Self-hosted Git Platform${NC}        ${GRAY}v1.0.0${NC}                ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}   ${LAVENDER}github.com/iPmartNetwork/iPmartGit${NC}                    ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    │${NC}                                                         ${INDIGO}│${NC}"
-  echo -e "${INDIGO}    └─────────────────────────────────────────────────────────┘${NC}"
+  echo -e "${INDIGO}    ┌──────────────────────────────────────────────────────────────────┐${NC}"
+  echo -e "${INDIGO}    │${NC}                                                                  ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}██╗${LAVENDER}██████╗ ${PINK}███╗   ███╗${LAVENDER}█████╗ ${PINK}██████╗ ${LAVENDER}████████╗${NC}            ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██╔══██╗${PINK}████╗ ████║${LAVENDER}██╔══██╗${PINK}██╔══██╗${LAVENDER}╚══██╔══╝${NC}            ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██████╔╝${PINK}██╔████╔██║${LAVENDER}███████║${PINK}██████╔╝${LAVENDER}   ██║   ${NC}            ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██╔═══╝ ${PINK}██║╚██╔╝██║${LAVENDER}██╔══██║${PINK}██╔══██╗${LAVENDER}   ██║   ${NC}            ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}██║${LAVENDER}██║     ${PINK}██║ ╚═╝ ██║${LAVENDER}██║  ██║${PINK}██║  ██║${LAVENDER}   ██║   ${NC}            ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${PINK}╚═╝${LAVENDER}╚═╝     ${PINK}╚═╝     ╚═╝${LAVENDER}╚═╝  ╚═╝${PINK}╚═╝  ╚═╝${LAVENDER}   ╚═╝   ${NC}            ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}                          ${SKYBLUE}╔═╗╦╔╦╗${NC}                              ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}                          ${SKYBLUE}║ ╦║ ║ ${NC}                              ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}                          ${SKYBLUE}╚═╝╩ ╩ ${NC}                              ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}                                                                  ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${WHITE}Self-hosted Git Platform${NC}                  ${GRAY}v1.0.0${NC}             ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}   ${LAVENDER}github.com/iPmartNetwork/iPmartGit${NC}                             ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    │${NC}                                                                  ${INDIGO}│${NC}"
+  echo -e "${INDIGO}    └──────────────────────────────────────────────────────────────────┘${NC}"
   echo ""
 }
 
@@ -102,14 +108,6 @@ show_menu() {
     service_status="${MINT}● Running${NC}"
   fi
 
-  echo -e "  ${BOLD}System Status:${NC}"
-  echo -e "  ─────────────────────────────────"
-  echo -e "  Status    : $status"
-  echo -e "  Version   : ${CYAN}$version${NC}"
-  echo -e "  Service   : $service_status"
-  echo -e "  Directory : ${CYAN}$APP_DIR${NC}"
-  echo -e "  URL       : ${CYAN}http://$(get_ip)${NC}"
-  echo ""
   echo -e "  ${GRAY}─────────────────────────────────────────${NC}"
   echo -e "  ${LAVENDER}System Status${NC}"
   echo -e "  ${GRAY}─────────────────────────────────────────${NC}"
@@ -978,4 +976,3 @@ if [ "$1" == "--install" ] || [ "$1" == "-i" ]; then
 fi
 
 show_menu
-
