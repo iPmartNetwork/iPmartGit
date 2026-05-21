@@ -7,6 +7,12 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Wait for database to be ready before starting
+const db = require('./db/database');
+
+async function startServer() {
+  await db.initPromise;
+
 // Ensure directories exist
 const REPOS_DIR = path.join(__dirname, 'repositories');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
@@ -132,4 +138,11 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 iPmartGit running on http://localhost:${PORT}`);
+});
+
+} // end startServer
+
+startServer().catch(err => {
+  console.error('Failed to start:', err);
+  process.exit(1);
 });

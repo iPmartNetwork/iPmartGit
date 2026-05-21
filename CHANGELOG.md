@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rate Limiting** — API rate limiting to prevent abuse
 - **Access Control** — Private repos, collaborator permissions, admin roles
 - **Input Validation** — Server-side validation on all inputs
+- **Admin Credentials** — Both username and password are changeable from Settings page
 
 ---
 
