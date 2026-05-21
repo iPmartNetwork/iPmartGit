@@ -184,7 +184,7 @@ do_install() {
   # Step 5: Install dependencies
   log_step 5 "Installing npm dependencies (this may take a few minutes)..."
   cd "$APP_DIR"
-  su - "$APP_USER" -c "cd $APP_DIR && npm install --production" 2>&1 | tail -3
+  install_npm_deps
   su - "$APP_USER" -c "cd $APP_DIR && node scripts/setup.js"
   log_ok "Dependencies installed and database initialized"
 
@@ -242,7 +242,7 @@ do_update() {
 
   # Reinstall dependencies
   chown -R "$APP_USER:$APP_USER" "$APP_DIR"
-  su - "$APP_USER" -c "cd $APP_DIR && npm install --production" 2>&1 | tail -3
+  install_npm_deps
   log_ok "Dependencies updated"
 
   # Restart
@@ -693,6 +693,87 @@ install_nodejs() {
       exit 1
     fi
   fi
+}
+
+install_npm_deps() {
+  cd "$APP_DIR"
+
+  # NPM Mirror registries to try (in order)
+  local registries=(
+    "https://registry.npmjs.org"
+    "https://registry.npmmirror.com"
+    "https://registry.yarnpkg.com"
+  )
+
+  local success=false
+
+  for registry in "${registries[@]}"; do
+    log_info "Trying npm registry: $registry"
+    su - "$APP_USER" -c "cd $APP_DIR && npm config set registry $registry" 2>/dev/null
+
+    if su - "$APP_USER" -c "cd $APP_DIR && npm install --production --loglevel=error" 2>&1 | tail -5; then
+      # Verify installation
+      if [ -d "$APP_DIR/node_modules/express" ] && [ -d "$APP_DIR/node_modules/better-sqlite3" ]; then
+        success=true
+        log_ok "npm install successful using $registry"
+        break
+      fi
+    fi
+
+    log_warn "Failed with $registry, trying next..."
+    # Clean failed install
+    rm -rf "$APP_DIR/node_modules" 2>/dev/null
+  done
+
+  if [ "$success" = false ]; then
+    echo ""
+    log_error "All npm registries failed. Possible solutions:"
+    echo ""
+    echo -e "  ${YELLOW}Option 1: Set proxy on server${NC}"
+    echo -e "    export http_proxy=http://your-proxy:port"
+    echo -e "    export https_proxy=http://your-proxy:port"
+    echo ""
+    echo -e "  ${YELLOW}Option 2: Upload node_modules manually${NC}"
+    echo -e "    On your local machine (with internet):"
+    echo -e "      cd iPmartGit && npm install --production"
+    echo -e "      tar -czf node_modules.tar.gz node_modules"
+    echo -e "      scp node_modules.tar.gz root@SERVER:/opt/ipmartgit/"
+    echo -e "    On server:"
+    echo -e "      cd /opt/ipmartgit"
+    echo -e "      tar -xzf node_modules.tar.gz"
+    echo -e "      chown -R $APP_USER:$APP_USER node_modules"
+    echo -e "      rm node_modules.tar.gz"
+    echo ""
+    echo -e "  ${YELLOW}Option 3: Try with different DNS${NC}"
+    echo -e "    echo 'nameserver 8.8.8.8' > /etc/resolv.conf"
+    echo -e "    Then re-run this script"
+    echo ""
+    echo -ne "  Press Enter to retry or Ctrl+C to exit: "
+    read -r
+
+    # One more try with DNS change
+    log_info "Retrying with alternative DNS..."
+    cp /etc/resolv.conf /etc/resolv.conf.backup 2>/dev/null
+    echo -e "nameserver 8.8.8.8\nnameserver 1.1.1.1" > /etc/resolv.conf
+
+    su - "$APP_USER" -c "cd $APP_DIR && npm config set registry https://registry.npmmirror.com"
+    if su - "$APP_USER" -c "cd $APP_DIR && npm install --production --loglevel=error" 2>&1 | tail -5; then
+      if [ -d "$APP_DIR/node_modules/express" ]; then
+        log_ok "npm install successful after DNS change"
+        # Restore DNS
+        cp /etc/resolv.conf.backup /etc/resolv.conf 2>/dev/null
+        return 0
+      fi
+    fi
+
+    # Restore DNS
+    cp /etc/resolv.conf.backup /etc/resolv.conf 2>/dev/null
+    log_error "Installation failed. Please use Option 2 (manual upload) above."
+    exit 1
+  fi
+
+  # Reset registry to default
+  su - "$APP_USER" -c "cd $APP_DIR && npm config set registry https://registry.npmjs.org" 2>/dev/null
 }
 
 download_project() {
