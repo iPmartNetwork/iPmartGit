@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - iPmartGit</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .error-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .error-code {
+      font-size: 8rem;
+      font-weight: 700;
+      background: var(--gradient-blue);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+    .error-message {
+      font-size: 1.4rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    .error-desc {
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      max-width: 400px;
+    }
+    .error-actions {
+      display: flex;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">
+        <img src="/assets/logo.svg" alt="iPmartGit" class="nav-logo">
+        <span>iPmartGit</span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="error-page">
+    <div class="error-code">404</div>
+    <p class="error-message">صفحه مورد نظر یافت نشد</p>
+    <p class="error-desc">آدرسی که وارد کردید وجود ندارد یا حذف شده است.</p>
+    <div class="error-actions">
+      <a href="/" class="btn btn-primary">بازگشت به خانه</a>
+      <a href="/explore" class="btn btn-outline">کاوش پروژه‌ها</a>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

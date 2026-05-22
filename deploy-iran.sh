@@ -27,42 +27,43 @@ NC='\033[0m'
 BOLD='\033[1m'
 
 # Extended colors (256-color)
-PINK='\033[38;5;213m'
-INDIGO='\033[38;5;105m'
-LAVENDER='\033[38;5;183m'
-SKYBLUE='\033[38;5;117m'
-MINT='\033[38;5;121m'
-ORANGE='\033[38;5;214m'
-GRAY='\033[38;5;245m'
+PINK='\033[1;35m'
+INDIGO='\033[1;34m'
+LAVENDER='\033[0;35m'
+SKYBLUE='\033[1;36m'
+MINT='\033[1;32m'
+ORANGE='\033[1;33m'
+GRAY='\033[0;37m'
 WHITE='\033[1;37m'
 
 # ============ HELPERS ============
 print_banner() {
   clear
   echo ""
-  echo -e "${INDIGO}    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${NC}"
-  echo -e "${INDIGO}    â”‚${NC}                                                        ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}   ${PINK}â–ˆâ–ˆâ•—${LAVENDER}â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— ${PINK}â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ–ˆâ•—${LAVENDER}â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— ${PINK}â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— ${LAVENDER}â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—${NC}  ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}   ${PINK}â–ˆâ–ˆâ•‘${LAVENDER}â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—${PINK}â–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ•‘${LAVENDER}â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—${PINK}â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—${LAVENDER}â•šâ•â•â–ˆâ–ˆâ•”â•â•â•${NC}  ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}   ${PINK}â–ˆâ–ˆâ•‘${LAVENDER}â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•${PINK}â–ˆâ–ˆâ•”â–ˆâ–ˆâ–ˆâ–ˆâ•”â–ˆâ–ˆâ•‘${LAVENDER}â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘${PINK}â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•${LAVENDER}   â–ˆâ–ˆâ•‘   ${NC}  ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}   ${PINK}â–ˆâ–ˆâ•‘${LAVENDER}â–ˆâ–ˆâ•”â•â•â•â• ${PINK}â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘${LAVENDER}â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘${PINK}â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—${LAVENDER}   â–ˆâ–ˆâ•‘   ${NC}  ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}   ${PINK}â–ˆâ–ˆâ•‘${LAVENDER}â–ˆâ–ˆâ•‘     ${PINK}â–ˆâ–ˆâ•‘ â•šâ•â• â–ˆâ–ˆâ•‘${LAVENDER}â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘${PINK}â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘${LAVENDER}   â–ˆâ–ˆâ•‘   ${NC}  ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}   ${PINK}â•šâ•â•${LAVENDER}â•šâ•â•     ${PINK}â•šâ•â•     â•šâ•â•${LAVENDER}â•šâ•â•  â•šâ•â•${PINK}â•šâ•â•  â•šâ•â•${LAVENDER}   â•šâ•â•   ${NC}  ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}                    ${SKYBLUE}â•”â•â•—â•¦â•”â•¦â•—${NC}                           ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}                    ${SKYBLUE}â•‘ â•¦â•‘ â•‘ ${NC}                           ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}                    ${SKYBLUE}â•šâ•â•â•© â•© ${NC}                           ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}                                                        ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}   ${WHITE}Self-hosted Git Platform${NC}            ${GRAY}v1.0.0${NC}         ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}   ${LAVENDER}github.com/iPmartNetwork/iPmartGit${NC}                 ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â”‚${NC}                                                        ${INDIGO}â”‚${NC}"
-  echo -e "${INDIGO}    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${NC}"
+  echo -e "${INDIGO}  +----------------------------------------------------------+${NC}"
+  echo -e "${INDIGO}  |${NC}                                                          ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}   ${PINK} _ ____  __  __    _    ____ _____${NC}                    ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}   ${PINK}(_)  _ \|  \/  |  / \  |  _ \_   _|${NC}                   ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}   ${PINK}| | |_) | |\/| | / _ \ | |_) || |${NC}                     ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}   ${PINK}| |  __/| |  | |/ ___ \|  _ < | |${NC}                     ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}   ${PINK}|_|_|   |_|  |_/_/   \_\_| \_\|_|${NC}                     ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}                       ${SKYBLUE}____ ___ _____${NC}                   ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}                      ${SKYBLUE}/ ___|_ _|_   _|${NC}                  ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}                     ${SKYBLUE}| |  _ | |  | |${NC}                    ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}                     ${SKYBLUE}| |_| || |  | |${NC}                    ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}                      ${SKYBLUE}\____|___| |_|${NC}                    ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}                                                          ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}   ${WHITE}Self-hosted Git Platform${NC}              ${GRAY}v1.0.0${NC}           ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}   ${LAVENDER}github.com/iPmartNetwork/iPmartGit${NC}                   ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  |${NC}                                                          ${INDIGO}|${NC}"
+  echo -e "${INDIGO}  +----------------------------------------------------------+${NC}"
   echo ""
 }
 
-log_info() { echo -e "  ${SKYBLUE}  â„¹ ${NC} $1"; }
-log_ok() { echo -e "  ${MINT}  âœ“ ${NC} $1"; }
-log_warn() { echo -e "  ${ORANGE}  âš  ${NC} $1"; }
-log_error() { echo -e "  ${RED}  âœ— ${NC} $1"; }
+log_info() { echo -e "  ${SKYBLUE}[i]${NC} $1"; }
+log_ok() { echo -e "  ${MINT}[ok]${NC} $1"; }
+log_warn() { echo -e "  ${ORANGE}[!]${NC} $1"; }
+log_error() { echo -e "  ${RED}[x]${NC} $1"; }
 log_step() { echo -e "\n  ${INDIGO}  [$1/$TOTAL_STEPS]${NC} ${LAVENDER}$2${NC}"; }
 
 check_root() {
@@ -96,31 +97,31 @@ get_version() {
 show_menu() {
   print_banner
 
-  local status="${RED}â— Not Installed${NC}"
-  local version="â€”"
-  local service_status="${RED}â— Stopped${NC}"
+  local status="${RED}Ã¢-Â Not Installed${NC}"
+  local version="Ã¢â‚¬â€"
+  local service_status="${RED}Ã¢-Â Stopped${NC}"
 
   if is_installed; then
-    status="${MINT}â— Installed${NC}"
+    status="${MINT}Ã¢-Â Installed${NC}"
     version=$(get_version)
   fi
 
   if service_running; then
-    service_status="${MINT}â— Running${NC}"
+    service_status="${MINT}Ã¢-Â Running${NC}"
   fi
 
-  echo -e "  ${GRAY}â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€${NC}"
+  echo -e "  ${GRAY}-----------------------------------------${NC}"
   echo -e "  ${LAVENDER}System Status${NC}"
-  echo -e "  ${GRAY}â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€${NC}"
+  echo -e "  ${GRAY}-----------------------------------------${NC}"
   echo -e "    Status    : $status"
   echo -e "    Version   : ${SKYBLUE}$version${NC}"
   echo -e "    Service   : $service_status"
   echo -e "    Directory : ${GRAY}$APP_DIR${NC}"
   echo -e "    URL       : ${SKYBLUE}http://$(get_ip)${NC}"
   echo ""
-  echo -e "  ${GRAY}â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€${NC}"
+  echo -e "  ${GRAY}-----------------------------------------${NC}"
   echo -e "  ${LAVENDER}Select an option${NC}"
-  echo -e "  ${GRAY}â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€${NC}"
+  echo -e "  ${GRAY}-----------------------------------------${NC}"
   echo ""
   echo -e "    ${MINT}1)${NC}  Install iPmartGit"
   echo -e "    ${SKYBLUE}2)${NC}  Update iPmartGit"
@@ -134,8 +135,8 @@ show_menu() {
   echo -e "    ${RED}10)${NC} Uninstall iPmartGit"
   echo -e "    ${GRAY}0)${NC}  Exit"
   echo ""
-  echo -e "  ${GRAY}â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€${NC}"
-  echo -ne "  ${LAVENDER}â–¶ ${NC}Enter option ${GRAY}[0-10]${NC}: "
+  echo -e "  ${GRAY}-----------------------------------------${NC}"
+  echo -ne "  ${LAVENDER}Ã¢â€“Â¶ ${NC}Enter option ${GRAY}[0-10]${NC}: "
   read -r choice
 
   case $choice in
@@ -306,7 +307,7 @@ do_update() {
 do_status() {
   print_banner
   echo -e "  ${BOLD}System Check:${NC}"
-  echo -e "  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
+  echo -e "  Ã¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*Â"
   echo ""
 
   # Node.js
@@ -395,7 +396,7 @@ do_status() {
   echo ""
   echo -e "  URL         : ${CYAN}http://$(get_ip)${NC}"
   echo ""
-  echo -e "  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
+  echo -e "  Ã¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*ÂÃ¢*Â"
 
   echo ""
   echo -ne "  Press Enter to return to menu..."
@@ -577,12 +578,12 @@ do_ssl() {
   echo -e "  Domain: ${SKYBLUE}$current_domain${NC}"
   echo ""
   echo -e "  ${LAVENDER}Select SSL method:${NC}"
-  echo -e "  ${GRAY}â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€${NC}"
+  echo -e "  ${GRAY}-----------------------------------------${NC}"
   echo -e "    ${MINT}1)${NC}  Let's Encrypt (automatic - needs internet)"
   echo -e "    ${SKYBLUE}2)${NC}  Manual Certificate (upload your own cert files)"
   echo -e "    ${GRAY}0)${NC}  Back"
   echo ""
-  echo -ne "  ${LAVENDER}â–¶ ${NC}Enter option: "
+  echo -ne "  ${LAVENDER}Ã¢â€“Â¶ ${NC}Enter option: "
   read -r ssl_method
 
   case $ssl_method in
@@ -598,8 +599,8 @@ do_ssl_letsencrypt() {
   local domain=$1
   echo ""
   echo -e "  ${YELLOW}Make sure:${NC}"
-  echo -e "  â€¢ DNS A record points to ${SKYBLUE}$(get_ip)${NC}"
-  echo -e "  â€¢ Port 80 is open (for verification)"
+  echo -e "  Ã¢â‚¬Â¢ DNS A record points to ${SKYBLUE}$(get_ip)${NC}"
+  echo -e "  Ã¢â‚¬Â¢ Port 80 is open (for verification)"
   echo ""
   echo -ne "  Enter email for SSL notifications (or press Enter to skip): "
   read -r ssl_email
@@ -629,9 +630,9 @@ do_ssl_letsencrypt() {
     echo ""
     log_error "SSL certificate installation failed."
     echo -e "  Common issues:"
-    echo -e "  â€¢ DNS not pointing to this server"
-    echo -e "  â€¢ Port 80 blocked by firewall"
-    echo -e "  â€¢ Domain not reachable from internet"
+    echo -e "  Ã¢â‚¬Â¢ DNS not pointing to this server"
+    echo -e "  Ã¢â‚¬Â¢ Port 80 blocked by firewall"
+    echo -e "  Ã¢â‚¬Â¢ Domain not reachable from internet"
     echo ""
     echo -e "  ${LAVENDER}Try option 2 (Manual Certificate) instead.${NC}"
   fi
@@ -647,7 +648,7 @@ do_ssl_manual() {
   local domain=$1
   echo ""
   echo -e "  ${LAVENDER}Manual SSL Certificate${NC}"
-  echo -e "  ${GRAY}â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€${NC}"
+  echo -e "  ${GRAY}-----------------------------------------${NC}"
   echo ""
   echo -e "  Upload your certificate files to the server first."
   echo -e "  Example paths:"
@@ -972,9 +973,9 @@ install_npm_deps() {
     echo ""
     log_error "All automatic methods failed."
     echo ""
-    echo -e "  ${ORANGE}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${NC}"
+    echo -e "  ${ORANGE}Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â${NC}"
     echo -e "  ${WHITE}Manual Installation Required:${NC}"
-    echo -e "  ${ORANGE}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${NC}"
+    echo -e "  ${ORANGE}Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â${NC}"
     echo ""
     echo -e "  ${LAVENDER}On your LOCAL machine (with internet):${NC}"
     echo ""
@@ -993,7 +994,7 @@ install_npm_deps() {
     echo -e "    ${SKYBLUE}sudo -u ipmartgit node scripts/setup.js${NC}"
     echo -e "    ${SKYBLUE}systemctl restart ipmartgit${NC}"
     echo ""
-    echo -e "  ${ORANGE}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${NC}"
+    echo -e "  ${ORANGE}Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â${NC}"
     echo ""
     echo -ne "  Press Enter after uploading node_modules.tar.gz, or Ctrl+C to exit: "
     read -r
@@ -1186,11 +1187,11 @@ show_install_complete() {
   local ip=$(get_ip)
 
   echo ""
-  echo -e "  ${INDIGO}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${NC}"
-  echo -e "  ${INDIGO}â”‚${NC}                                                         ${INDIGO}â”‚${NC}"
-  echo -e "  ${INDIGO}â”‚${NC}   ${MINT}âœ“${NC}  ${WHITE}iPmartGit installed successfully!${NC}                  ${INDIGO}â”‚${NC}"
-  echo -e "  ${INDIGO}â”‚${NC}                                                         ${INDIGO}â”‚${NC}"
-  echo -e "  ${INDIGO}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${NC}"
+  echo -e "  ${INDIGO}Ã¢â€Å’Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â${NC}"
+  echo -e "  ${INDIGO}Ã¢â€â€š${NC}                                                         ${INDIGO}Ã¢â€â€š${NC}"
+  echo -e "  ${INDIGO}Ã¢â€â€š${NC}   ${MINT}Ã¢Å“â€œ${NC}  ${WHITE}iPmartGit installed successfully!${NC}                  ${INDIGO}Ã¢â€â€š${NC}"
+  echo -e "  ${INDIGO}Ã¢â€â€š${NC}                                                         ${INDIGO}Ã¢â€â€š${NC}"
+  echo -e "  ${INDIGO}Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Ëœ${NC}"
   echo ""
   echo -e "  ${LAVENDER}Access:${NC}"
   if [ -n "$domain" ]; then
@@ -1203,7 +1204,7 @@ show_install_complete() {
   echo -e "    Username: ${PINK}admin${NC}"
   echo -e "    Password: ${PINK}admin123${NC}"
   echo ""
-  echo -e "  ${ORANGE}âš   Change the admin password after first login!${NC}"
+  echo -e "  ${ORANGE}Ã¢Å¡Â   Change the admin password after first login!${NC}"
   echo ""
   echo -e "  ${LAVENDER}Git Clone:${NC}"
   if [ -n "$domain" ]; then
