@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log('🚀 iPmartGit Setup');
+console.log('ðŸš€ iPmartGit Setup');
 console.log('==================');
 
 // Create necessary directories
@@ -9,6 +9,8 @@ const dirs = [
   'repositories',
   'uploads',
   'uploads/temp',
+  'uploads/releases',
+  'git-repos',
   'db'
 ];
 
@@ -16,22 +18,28 @@ dirs.forEach(dir => {
   const fullPath = path.join(__dirname, '..', dir);
   if (!fs.existsSync(fullPath)) {
     fs.mkdirSync(fullPath, { recursive: true });
-    console.log(`✅ Created: ${dir}/`);
+    console.log(`âœ… Created: ${dir}/`);
   } else {
-    console.log(`📁 Exists: ${dir}/`);
+    console.log(`ðŸ“ Exists: ${dir}/`);
   }
 });
 
 // Initialize database
-console.log('\n📦 Initializing database...');
-require('../db/database');
-console.log('✅ Database ready');
+console.log('\nðŸ“¦ Initializing database...');
+const db = require('../db/database');
 
-console.log('\n==================');
-console.log('✅ Setup complete!');
-console.log('\n📋 Default admin credentials:');
-console.log('   Username: admin');
-console.log('   Password: admin123');
-console.log('\n⚠️  Please change the admin password after first login!');
-console.log('\n🚀 Start the server with: npm start');
-console.log('   Or for development: npm run dev');
+db.initPromise.then(() => {
+  console.log('âœ… Database ready');
+  console.log('\n==================');
+  console.log('âœ… Setup complete!');
+  console.log('\nðŸ“‹ Default admin credentials:');
+  console.log('   Username: admin');
+  console.log('   Password: admin123');
+  console.log('\nâš ï¸  Please change the admin password after first login!');
+  console.log('\nðŸš€ Start the server with: npm start');
+  console.log('   Or for development: npm run dev');
+  process.exit(0);
+}).catch(err => {
+  console.error('âŒ Database initialization failed:', err.message);
+  process.exit(1);
+});
