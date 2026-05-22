@@ -1,0 +1,6 @@
+# Force LF line endings for shell scripts
+*.sh text eol=lf
+deploy-iran.sh text eol=lf
+
+# Default
+* text=auto
