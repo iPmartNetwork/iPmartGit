@@ -27,13 +27,13 @@ NC='\033[0m'
 BOLD='\033[1m'
 
 # Extended colors (256-color)
-PINK='\033[38;5;213m'
-INDIGO='\033[38;5;105m'
-LAVENDER='\033[38;5;183m'
-SKYBLUE='\033[38;5;117m'
-MINT='\033[38;5;121m'
-ORANGE='\033[38;5;214m'
-GRAY='\033[38;5;245m'
+PINK='\033[1;35m'
+INDIGO='\033[1;34m'
+LAVENDER='\033[0;35m'
+SKYBLUE='\033[1;36m'
+MINT='\033[1;32m'
+ORANGE='\033[1;33m'
+GRAY='\033[0;37m'
 WHITE='\033[1;37m'
 
 # ============ HELPERS ============
