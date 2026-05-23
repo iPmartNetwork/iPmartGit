@@ -63,6 +63,7 @@ const orgRoutes = require('./routes/organizations');
 const activityRoutes = require('./routes/activity');
 const codeReviewRoutes = require('./routes/code-review');
 const importExportRoutes = require('./routes/import-export');
+const rawRoutes = require('./routes/raw');
 
 app.use('/auth', authRoutes);
 app.use('/repos', repoRoutes);
@@ -80,6 +81,7 @@ app.use('/org', orgRoutes);
 app.use('/activity', activityRoutes);
 app.use('/review', codeReviewRoutes);
 app.use('/transfer', importExportRoutes);
+app.use('/raw', rawRoutes);
 
 // Home page
 app.get('/', (req, res) => {
@@ -118,14 +120,14 @@ app.get('/settings', (req, res) => {
 // Repository view (must be last - catches /:owner/:repo pattern)
 app.get('/:owner/:repo', (req, res) => {
   // Avoid matching static files and known routes
-  const reserved = ['auth', 'repos', 'api', 'mirror', 'dashboard', 'explore', 'css', 'js', 'assets', 'uploads', 'edit', 'new-file', 'settings', 'admin', 'fork', 'collaborators', 'notifications', 'git', 'pr', 'releases', 'tokens', 'org', 'activity', 'review', 'transfer'];
+  const reserved = ['auth', 'repos', 'api', 'mirror', 'dashboard', 'explore', 'css', 'js', 'assets', 'uploads', 'edit', 'new-file', 'settings', 'admin', 'fork', 'collaborators', 'notifications', 'git', 'pr', 'releases', 'tokens', 'org', 'activity', 'review', 'transfer', 'raw'];
   if (reserved.includes(req.params.owner)) return res.status(404).send('Not found');
   res.sendFile(path.join(__dirname, 'public', 'repo.html'));
 });
 
 // User profile (catches /:username pattern - must check if it's a user)
 app.get('/:username', (req, res) => {
-  const reserved = ['auth', 'repos', 'api', 'mirror', 'dashboard', 'explore', 'css', 'js', 'assets', 'uploads', 'edit', 'new-file', 'settings', 'admin', 'fork', 'collaborators', 'notifications', 'git', 'pr', 'releases', 'tokens', 'org', 'activity', 'review', 'transfer'];
+  const reserved = ['auth', 'repos', 'api', 'mirror', 'dashboard', 'explore', 'css', 'js', 'assets', 'uploads', 'edit', 'new-file', 'settings', 'admin', 'fork', 'collaborators', 'notifications', 'git', 'pr', 'releases', 'tokens', 'org', 'activity', 'review', 'transfer', 'raw'];
   if (reserved.includes(req.params.username)) return res.status(404).send('Not found');
   res.sendFile(path.join(__dirname, 'public', 'user-profile.html'));
 });

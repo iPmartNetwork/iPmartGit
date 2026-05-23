@@ -394,11 +394,15 @@ class Database {
   _createAdmin() {
     const admin = this.prepare('SELECT id FROM users WHERE username = ?').get('admin');
     if (!admin) {
-      const hashedPassword = bcrypt.hashSync('admin123', 10);
-      this.prepare('INSERT INTO users (username, email, password, display_name, is_admin) VALUES (?, ?, ?, ?, ?)')
-        .run('admin', 'admin@ipmartgit.local', hashedPassword, 'مدیر سیستم', 1);
-      this.save();
-      console.log('✅ Default admin user created (admin / admin123)');
+      try {
+        const hashedPassword = bcrypt.hashSync('admin123', 10);
+        this.prepare('INSERT INTO users (username, email, password, display_name, is_admin) VALUES (?, ?, ?, ?, ?)')
+          .run('admin', 'admin@ipmartgit.local', hashedPassword, 'Admin', 1);
+        this.save();
+        console.log('Default admin user created (admin / admin123)');
+      } catch (e) {
+        // Admin already exists, skip
+      }
     }
   }
 }
