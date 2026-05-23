@@ -136,7 +136,7 @@ show_menu() {
   echo -e "    ${GRAY}0)${NC}  Exit"
   echo ""
   echo -e "  ${GRAY}-----------------------------------------${NC}"
-  echo -ne "  ${LAVENDER}Ã¢â€“Â¶ ${NC}Enter option ${GRAY}[0-10]${NC}: "
+  echo -ne "  ${LAVENDER}Ã¢â€“Â¶ ${NC}Enter option ${GRAY}[0-11]${NC}: "
   read -r choice
 
   case $choice in
@@ -149,7 +149,8 @@ show_menu() {
     7) do_change_domain_port ;;
     8) do_firewall ;;
     9) do_backup ;;
-    10) do_uninstall ;;
+    10) do_update_script ;;
+    11) do_uninstall ;;
     0) echo ""; log_info "Goodbye!"; exit 0 ;;
     *) log_error "Invalid option"; sleep 1; show_menu ;;
   esac
@@ -265,19 +266,28 @@ do_update() {
   systemctl stop "$APP_SERVICE" 2>/dev/null || true
   log_ok "Service stopped"
 
-  # Pull latest code
-  cd "$APP_DIR"
-  if [ -d "$APP_DIR/.git" ]; then
-    su - "$APP_USER" -c "cd $APP_DIR && git pull origin master" 2>&1 | tail -5
+  # Fix git safe directory
+  git config --global --add safe.directory "$APP_DIR" 2>/dev/null
+
+  # Force fresh download from GitHub
+  log_info "Downloading latest version..."
+  rm -rf /tmp/iPmartGit-update
+  if git clone "$APP_REPO" /tmp/iPmartGit-update 2>/dev/null; then
+    # Sync all files EXCEPT data directories
+    rsync -a --delete \
+      --exclude='db/' \
+      --exclude='repositories/' \
+      --exclude='git-repos/' \
+      --exclude='uploads/' \
+      --exclude='node_modules/' \
+      /tmp/iPmartGit-update/ "$APP_DIR/"
+    rm -rf /tmp/iPmartGit-update
+    log_ok "Files updated from GitHub"
   else
-    # Re-download
-    rm -rf /tmp/iPmartGit
-    git clone "$APP_REPO" /tmp/iPmartGit 2>/dev/null
-    # Keep data directories
-    rsync -a --exclude='db' --exclude='repositories' --exclude='git-repos' --exclude='uploads' --exclude='node_modules' /tmp/iPmartGit/ "$APP_DIR/"
-    rm -rf /tmp/iPmartGit
+    log_warn "GitHub not reachable. Trying local git pull..."
+    cd "$APP_DIR"
+    git pull origin master 2>&1 | tail -3 || true
   fi
-  log_ok "Code updated"
 
   # Reinstall dependencies
   chown -R "$APP_USER:$APP_USER" "$APP_DIR"
@@ -1221,6 +1231,46 @@ show_install_complete() {
   echo -e "  ${LAVENDER}Re-run this script anytime:${NC}"
   echo -e "    ${INDIGO}bash <(curl -s https://raw.githubusercontent.com/iPmartNetwork/iPmartGit/master/deploy-iran.sh)${NC}"
   echo ""
+}
+
+# ============ UPDATE SCRIPT ============
+do_update_script() {
+  print_banner
+  log_info "Updating installer script..."
+
+  local SCRIPT_URL="https://raw.githubusercontent.com/iPmartNetwork/iPmartGit/master/deploy-iran.sh"
+  local SCRIPT_PATH="$APP_DIR/deploy-iran.sh"
+
+  # Try multiple sources
+  local URLS=(
+    "$SCRIPT_URL"
+    "https://ghproxy.com/$SCRIPT_URL"
+  )
+
+  local downloaded=false
+  for url in "${URLS[@]}"; do
+    log_info "Trying: $url"
+    if curl -fsSL --connect-timeout 15 -o /tmp/deploy-new.sh "$url" 2>/dev/null; then
+      if head -1 /tmp/deploy-new.sh | grep -q "bash"; then
+        cp /tmp/deploy-new.sh "$SCRIPT_PATH"
+        chmod +x "$SCRIPT_PATH"
+        rm -f /tmp/deploy-new.sh
+        downloaded=true
+        log_ok "Script updated to latest version!"
+        echo ""
+        echo -e "  ${ORANGE}Restarting script...${NC}"
+        sleep 1
+        exec bash "$SCRIPT_PATH"
+      fi
+    fi
+  done
+
+  if [ "$downloaded" = false ]; then
+    log_error "Failed to download. No internet access to GitHub."
+    echo -e "  ${GRAY}Upload manually: scp deploy-iran.sh root@SERVER:/opt/ipmartgit/${NC}"
+  fi
+
+  echo ""; echo -ne "  Press Enter..."; read -r; show_menu
 }
 
 # ============ MAIN ============

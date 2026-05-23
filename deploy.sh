@@ -118,11 +118,12 @@ show_menu() {
   echo -e "    ${CYAN}7)${NC}  Change Domain / Port"
   echo -e "    ${GREEN}8)${NC}  Backup Database"
   echo -e "    ${YELLOW}9)${NC}  Sync to Iran Server"
-  echo -e "    ${RED}10)${NC} Uninstall"
+  echo -e "    ${PURPLE}10)${NC} Update Script"
+  echo -e "    ${RED}11)${NC} Uninstall"
   echo -e "    ${GRAY}0)${NC}  Exit"
   echo ""
   echo -e "  ${GRAY}-----------------------------------------${NC}"
-  echo -ne "  ${PURPLE}>${NC} Enter option [0-10]: "
+  echo -ne "  ${PURPLE}>${NC} Enter option [0-11]: "
   read -r choice
 
   case $choice in
@@ -135,7 +136,8 @@ show_menu() {
     7) do_change_domain_port ;;
     8) do_backup ;;
     9) do_sync_iran ;;
-    10) do_uninstall ;;
+    10) do_update_script ;;
+    11) do_uninstall ;;
     0) echo ""; log_info "Goodbye!"; exit 0 ;;
     *) log_error "Invalid option"; sleep 1; show_menu ;;
   esac
@@ -218,6 +220,7 @@ do_update() {
   fi
 
   log_info "Updating iPmartGit..."
+  echo ""
 
   # Backup DB
   if [ -f "$APP_DIR/db/ipmartgit.db" ]; then
@@ -227,27 +230,75 @@ do_update() {
 
   systemctl stop "$APP_SERVICE" 2>/dev/null || true
 
-  cd "$APP_DIR"
-  if [ -d ".git" ]; then
-    git pull origin master 2>&1 | tail -3
-  else
-    git clone "$APP_REPO" /tmp/iPmartGit-update
-    rsync -a --exclude='db' --exclude='repositories' --exclude='git-repos' --exclude='uploads' --exclude='node_modules' /tmp/iPmartGit-update/ "$APP_DIR/"
+  # Fix git safe directory
+  git config --global --add safe.directory "$APP_DIR" 2>/dev/null
+
+  # Force update from GitHub (fresh clone to temp, then sync)
+  log_info "Downloading latest version from GitHub..."
+  rm -rf /tmp/iPmartGit-update
+  if git clone "$APP_REPO" /tmp/iPmartGit-update 2>/dev/null; then
+    # Sync all files EXCEPT data directories
+    rsync -a --delete \
+      --exclude='db/' \
+      --exclude='repositories/' \
+      --exclude='git-repos/' \
+      --exclude='uploads/' \
+      --exclude='node_modules/' \
+      --exclude='.git/' \
+      /tmp/iPmartGit-update/ "$APP_DIR/"
     rm -rf /tmp/iPmartGit-update
+    log_ok "Files updated from GitHub"
+  else
+    log_error "Failed to download from GitHub"
+    systemctl start "$APP_SERVICE" 2>/dev/null
+    echo ""; echo -ne "  Press Enter..."; read -r; show_menu; return
   fi
 
+  # Reinstall dependencies
   chown -R "$APP_USER:$APP_USER" "$APP_DIR"
+  log_info "Installing dependencies..."
   su - "$APP_USER" -c "cd $APP_DIR && npm install --production" 2>&1 | tail -3
-  log_ok "Code updated"
+  log_ok "Dependencies updated"
 
+  # Restart
   systemctl start "$APP_SERVICE"
-  sleep 2
+  sleep 3
 
   if service_running; then
     log_ok "iPmartGit updated and running! (v$(get_version))"
   else
     log_error "Service failed to start"
     journalctl -u "$APP_SERVICE" --no-pager -n 10
+  fi
+
+  echo ""; echo -ne "  Press Enter..."; read -r; show_menu
+}
+
+# ============ UPDATE SCRIPT ============
+do_update_script() {
+  print_banner
+  log_info "Updating installer script..."
+
+  local SCRIPT_URL="https://raw.githubusercontent.com/iPmartNetwork/iPmartGit/master/deploy.sh"
+  local SCRIPT_PATH="$APP_DIR/deploy.sh"
+
+  if curl -fsSL --connect-timeout 15 -o /tmp/deploy-new.sh "$SCRIPT_URL" 2>/dev/null; then
+    # Verify it's a valid script
+    if head -1 /tmp/deploy-new.sh | grep -q "bash"; then
+      cp /tmp/deploy-new.sh "$SCRIPT_PATH"
+      chmod +x "$SCRIPT_PATH"
+      rm -f /tmp/deploy-new.sh
+      log_ok "Script updated to latest version!"
+      echo ""
+      echo -e "  ${YELLOW}Restarting script...${NC}"
+      sleep 1
+      exec bash "$SCRIPT_PATH"
+    else
+      log_error "Downloaded file is not a valid script"
+      rm -f /tmp/deploy-new.sh
+    fi
+  else
+    log_error "Failed to download. Check internet connection."
   fi
 
   echo ""; echo -ne "  Press Enter..."; read -r; show_menu
