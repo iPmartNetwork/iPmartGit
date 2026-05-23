@@ -437,7 +437,7 @@ do_backup() {
 # ============ SYNC TO IRAN ============
 do_sync_iran() {
   print_banner
-  echo -e "  ${WHITE}Sync database to Iran server${NC}"
+  echo -e "  ${WHITE}Sync to Iran Server (Database + Code)${NC}"
   echo -e "  ${GRAY}-----------------------------------------${NC}"
   echo ""
   echo -ne "  Iran server IP: "
@@ -451,24 +451,68 @@ do_sync_iran() {
     echo ""; echo -ne "  Press Enter..."; read -r; show_menu; return
   fi
 
-  log_info "Syncing to $iran_ip..."
+  echo ""
+  echo -e "  ${WHITE}What to sync?${NC}"
+  echo -e "    1) Database only (repositories, users, files)"
+  echo -e "    2) Code only (HTML, CSS, JS, routes)"
+  echo -e "    3) Both (database + code) [recommended]"
+  echo -e "    0) Back"
+  echo ""
+  echo -ne "  Option: "
+  read -r sync_choice
 
-  # Create sync package
-  tar -czf /tmp/ipmartgit-sync.tar.gz -C "$APP_DIR" db/ipmartgit.db 2>/dev/null
-
-  # Send to Iran server
-  if scp -P "$iran_port" /tmp/ipmartgit-sync.tar.gz "root@$iran_ip:/opt/ipmartgit/"; then
-    log_ok "File sent to Iran server"
-    log_info "Extracting on Iran server..."
-    ssh -p "$iran_port" "root@$iran_ip" "cd /opt/ipmartgit && systemctl stop ipmartgit && tar -xzf ipmartgit-sync.tar.gz && rm ipmartgit-sync.tar.gz && chown -R ipmartgit:ipmartgit db/ && systemctl start ipmartgit" 2>&1
-    log_ok "Sync complete!"
-  else
-    log_error "Failed to send. Check SSH access."
-  fi
-
-  rm -f /tmp/ipmartgit-sync.tar.gz
+  case $sync_choice in
+    1) sync_database "$iran_ip" "$iran_port" ;;
+    2) sync_code "$iran_ip" "$iran_port" ;;
+    3) sync_database "$iran_ip" "$iran_port"; sync_code "$iran_ip" "$iran_port" ;;
+    0) show_menu; return ;;
+    *) log_error "Invalid"; show_menu; return ;;
+  esac
 
   echo ""; echo -ne "  Press Enter..."; read -r; show_menu
+}
+
+sync_database() {
+  local ip=$1 port=$2
+  log_info "Syncing database to $ip..."
+
+  # Create sync package with database
+  tar -czf /tmp/ipmartgit-db.tar.gz -C "$APP_DIR" db/ipmartgit.db 2>/dev/null
+
+  if scp -P "$port" /tmp/ipmartgit-db.tar.gz "root@$ip:/opt/ipmartgit/"; then
+    ssh -p "$port" "root@$ip" "cd /opt/ipmartgit && systemctl stop ipmartgit && tar -xzf ipmartgit-db.tar.gz && rm ipmartgit-db.tar.gz && chown -R ipmartgit:ipmartgit db/ && systemctl start ipmartgit" 2>&1
+    log_ok "Database synced!"
+  else
+    log_error "Failed. Try from Iran server instead:"
+    echo -e "  ${CYAN}scp root@$(get_ip):/opt/ipmartgit/db/ipmartgit.db /opt/ipmartgit/db/${NC}"
+  fi
+  rm -f /tmp/ipmartgit-db.tar.gz
+}
+
+sync_code() {
+  local ip=$1 port=$2
+  log_info "Syncing code to $ip..."
+
+  # Create package with all code files (exclude data)
+  tar -czf /tmp/ipmartgit-code.tar.gz -C "$APP_DIR" \
+    --exclude='db' \
+    --exclude='repositories' \
+    --exclude='git-repos' \
+    --exclude='uploads' \
+    --exclude='node_modules' \
+    --exclude='.git' \
+    . 2>/dev/null
+
+  if scp -P "$port" /tmp/ipmartgit-code.tar.gz "root@$ip:/opt/ipmartgit/"; then
+    ssh -p "$port" "root@$ip" "cd /opt/ipmartgit && tar -xzf ipmartgit-code.tar.gz && rm ipmartgit-code.tar.gz && chown -R ipmartgit:ipmartgit . && systemctl restart ipmartgit" 2>&1
+    log_ok "Code synced!"
+  else
+    log_error "Failed. Try from Iran server instead:"
+    echo -e "  ${CYAN}scp -r root@$(get_ip):/opt/ipmartgit/public /opt/ipmartgit/${NC}"
+    echo -e "  ${CYAN}scp -r root@$(get_ip):/opt/ipmartgit/routes /opt/ipmartgit/${NC}"
+    echo -e "  ${CYAN}scp root@$(get_ip):/opt/ipmartgit/server.js /opt/ipmartgit/${NC}"
+  fi
+  rm -f /tmp/ipmartgit-code.tar.gz
 }
 
 # ============ UNINSTALL ============
