@@ -232,21 +232,19 @@
       for (const [name, value] of entries) {
         if (value.file_path) {
           html += `
-            <div class="file-item">
-              <span class="file-icon" style="color:var(--text-muted);">${getFileIcon(name)}</span>
-              <span class="file-name" onclick="viewFile('${value.file_path}')" style="cursor:pointer; flex:1;">${name}</span>
+            <div class="file-item" onclick="viewFile('${value.file_path}')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--text-muted)" style="min-width:16px;"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V4.664a.25.25 0 0 0-.073-.177l-2.914-2.914a.25.25 0 0 0-.177-.073Z"/></svg>
+              <span class="file-name" style="flex:1;">${name}</span>
               <span class="file-size">${formatSize(value.size)}</span>
-              ${isOwner && !value.is_binary ? `<a href="/edit?owner=${owner}&repo=${repo}&path=${encodeURIComponent(value.file_path)}" class="btn btn-sm btn-outline" style="margin-right:4px; padding:2px 6px; font-size:0.7rem;" title="ویرایش">✏️</a>` : ''}
-              ${isOwner ? `<button class="btn btn-sm btn-outline" style="padding:2px 6px; font-size:0.7rem; color:var(--accent-red);" onclick="event.stopPropagation(); deleteFile('${value.file_path}')" title="حذف">✕</button>` : ''}
+              ${isOwner ? `<a href="/edit?owner=${owner}&repo=${repo}&path=${encodeURIComponent(value.file_path)}" class="btn btn-sm btn-outline" style="padding:2px 6px; font-size:0.7rem; margin-right:4px;" onclick="event.stopPropagation();">✏️</a><button class="btn btn-sm btn-outline" style="padding:2px 6px; font-size:0.7rem; color:var(--accent-red);" onclick="event.stopPropagation(); deleteFile('${value.file_path}')">✕</button>` : ''}
             </div>
           `;
         } else {
           const dirId = 'dir-' + (prefix + name).replace(/[^a-zA-Z0-9]/g, '-');
           html += `
-            <div class="file-item" style="cursor:pointer;" onclick="document.getElementById('${dirId}').style.display = document.getElementById('${dirId}').style.display === 'none' ? 'block' : 'none'">
-              <span class="file-icon" style="color:var(--accent-blue);">📁</span>
-              <span class="file-name"><strong>${name}</strong></span>
-              <span class="file-size" style="font-size:0.7rem; color:var(--text-muted);">▼</span>
+            <div class="file-item" onclick="document.getElementById('${dirId}').style.display = document.getElementById('${dirId}').style.display === 'none' ? 'block' : 'none'">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--accent-blue)" style="min-width:16px;"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1Z"/></svg>
+              <span class="file-name" style="flex:1;"><strong>${name}</strong></span>
             </div>
             <div id="${dirId}" style="padding-right:20px;">
           `;
