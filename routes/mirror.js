@@ -65,15 +65,18 @@ router.post('/github', requireAuth, (req, res) => {
     // Fetch file tree from GitHub
     fetchGitHubTree(ghOwner, ghRepo, ghData.default_branch || 'main', repoId)
       .then(() => {
+        // Also fetch latest release
+        return fetchLatestRelease(ghOwner, ghRepo, repoId, req.session.user.id);
+      })
+      .then(() => {
         res.json({
           success: true,
-          message: 'میرور با موفقیت ایجاد شد',
+          message: 'میرور با موفقیت ایجاد شد (شامل آخرین Release)',
           redirect: `/${req.session.user.username}/${repoName}`
         });
       })
       .catch(err => {
         console.error('Error fetching tree:', err);
-        // Still return success since repo was created
         res.json({
           success: true,
           message: 'ریپازیتوری ایجاد شد اما دریافت فایل‌ها با خطا مواجه شد. می‌توانید بعداً سینک کنید.',
@@ -207,6 +210,89 @@ function isBinaryBuffer(buffer) {
     if (buffer[i] === 0) return true;
   }
   return false;
+}
+
+// Fetch latest release from GitHub
+async function fetchLatestRelease(owner, repo, repoId, userId) {
+  try {
+    const releaseUrl = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+    const release = await fetchJSON(releaseUrl);
+
+    if (!release || !release.tag_name) return;
+
+    // Check if release already exists
+    const existing = db.prepare('SELECT id FROM releases WHERE repo_id = ? AND tag_name = ?').get(repoId, release.tag_name);
+    if (existing) return;
+
+    // Create release record
+    const result = db.prepare(`
+      INSERT INTO releases (repo_id, author_id, tag_name, title, body, is_prerelease)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      repoId,
+      userId,
+      release.tag_name,
+      release.name || release.tag_name,
+      release.body || '',
+      release.prerelease ? 1 : 0
+    );
+
+    const releaseId = result.lastInsertRowid;
+
+    // Download release assets (max 5, max 100MB each)
+    if (release.assets && release.assets.length > 0) {
+      const fs = require('fs');
+      const path = require('path');
+      const releaseDir = path.join(__dirname, '..', 'uploads', 'releases');
+      if (!fs.existsSync(releaseDir)) fs.mkdirSync(releaseDir, { recursive: true });
+
+      for (const asset of release.assets.slice(0, 5)) {
+        if (asset.size > 100 * 1024 * 1024) continue; // Skip > 100MB
+
+        try {
+          const assetData = await downloadFile(asset.browser_download_url);
+          if (assetData) {
+            const filename = `${Date.now()}-${asset.name}`;
+            const filepath = path.join(releaseDir, filename);
+            fs.writeFileSync(filepath, assetData);
+
+            db.prepare(`
+              INSERT INTO release_assets (release_id, file_name, file_path, size, mime_type)
+              VALUES (?, ?, ?, ?, ?)
+            `).run(releaseId, asset.name, filename, asset.size, asset.content_type || 'application/octet-stream');
+          }
+        } catch (e) {
+          console.error(`Failed to download asset: ${asset.name}`, e.message);
+        }
+      }
+    }
+
+    console.log(`Release ${release.tag_name} mirrored for ${owner}/${repo}`);
+  } catch (err) {
+    console.error('Failed to fetch release:', err.message);
+  }
+}
+
+// Download file as buffer
+function downloadFile(url) {
+  return new Promise((resolve, reject) => {
+    const protocol = url.startsWith('https') ? https : http;
+    const options = {
+      headers: { 'User-Agent': 'iPmartGit/1.0' }
+    };
+
+    protocol.get(url, options, (response) => {
+      // Follow redirects
+      if (response.statusCode === 302 || response.statusCode === 301) {
+        downloadFile(response.headers.location).then(resolve).catch(reject);
+        return;
+      }
+
+      const chunks = [];
+      response.on('data', chunk => chunks.push(chunk));
+      response.on('end', () => resolve(Buffer.concat(chunks)));
+    }).on('error', reject);
+  });
 }
 
 module.exports = router;

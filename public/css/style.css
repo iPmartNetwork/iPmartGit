@@ -844,3 +844,20 @@ a:hover {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* Repo sidebar */
+.repo-sidebar {
+  position: sticky;
+  top: 80px;
+  align-self: start;
+}
+
+@media (max-width: 900px) {
+  #tabCode {
+    grid-template-columns: 1fr !important;
+  }
+  .repo-sidebar {
+    position: static;
+  }
+}

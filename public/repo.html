@@ -68,6 +68,9 @@
       const isOwner = currentUser && currentUser.id === data.owner_id;
       const isLoggedIn = !!currentUser;
       
+      // Find README
+      const readmeFile = data.files ? data.files.find(f => f.file_name.toLowerCase() === 'readme.md') : null;
+
       let html = `
         <div class="repo-header">
           <div class="repo-title">
@@ -75,7 +78,7 @@
             <a href="/${data.owner_name}">${data.owner_name}</a>
             <span>/</span>
             <strong>${data.name}</strong>
-            ${data.is_private ? '<span class="repo-card-badge private">خصوصی</span>' : ''}
+            ${data.is_private ? '<span class="repo-card-badge private">خصوصی</span>' : '<span class="repo-card-badge" style="border-color:var(--accent-green);color:var(--accent-green);">عمومی</span>'}
             ${data.is_mirror ? '<span class="repo-card-badge mirror">میرور</span>' : ''}
           </div>
           <div class="repo-actions">
@@ -89,8 +92,8 @@
           </div>
         </div>
 
-        ${data.description ? `<p style="color:var(--text-secondary); margin-bottom:20px;">${data.description}</p>` : ''}
-        ${data.mirror_url ? `<p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">🔗 میرور از: <a href="${data.mirror_url}" dir="ltr">${data.mirror_url}</a></p>` : ''}
+        ${data.description ? `<p style="color:var(--text-secondary); margin-bottom:16px;">${data.description}</p>` : ''}
+        ${data.mirror_url ? `<p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:16px;">🔗 میرور از: <a href="${data.mirror_url}" dir="ltr">${data.mirror_url}</a></p>` : ''}
 
         <div class="repo-tabs">
           <span class="repo-tab active" onclick="showTab('code')">📁 کد</span>
@@ -102,13 +105,27 @@
           ${isOwner ? '<span class="repo-tab" onclick="showTab(\'settings\')">⚙️ تنظیمات</span>' : ''}
         </div>
 
-        <div id="tabCode">
-          ${isOwner ? `
-          <div style="margin-bottom:12px; display:flex; gap:8px;">
-            <a href="/new-file?owner=${owner}&repo=${repo}" class="btn btn-sm btn-outline">📄 فایل جدید</a>
+        <div id="tabCode" style="display:grid; grid-template-columns:1fr 280px; gap:20px;">
+          <div>
+            ${isOwner ? `<div style="margin-bottom:12px; display:flex; gap:8px;"><a href="/new-file?owner=${owner}&repo=${repo}" class="btn btn-sm btn-outline">📄 فایل جدید</a></div>` : ''}
+            ${renderFileTree(data.files, isOwner)}
+            ${readmeFile ? `<div id="readmeSection" style="margin-top:16px;"><div class="loading"><div class="spinner"></div></div></div>` : ''}
           </div>
-          ` : ''}
-          ${renderFileTree(data.files, isOwner)}
+          <aside class="repo-sidebar">
+            <div style="background:var(--bg-glass); backdrop-filter:var(--blur); border:1px solid var(--border-glass); border-radius:var(--radius-md); padding:16px;">
+              <h4 style="margin-bottom:12px;">About</h4>
+              ${data.description ? `<p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:12px;">${data.description}</p>` : '<p style="color:var(--text-muted); font-size:0.85rem;">بدون توضیحات</p>'}
+              ${data.language ? `<p style="margin-top:12px; font-size:0.85rem;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${getLanguageColor(data.language)};margin-left:4px;"></span> ${data.language}</p>` : ''}
+              <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-glass); font-size:0.85rem; color:var(--text-muted);">
+                <p>⭐ ${data.stars} ستاره</p>
+                <p>🍴 ${data.forks || 0} فورک</p>
+                <p>📦 ${formatSize(data.size)}</p>
+                <p>📁 ${data.files ? data.files.length : 0} فایل</p>
+              </div>
+              ${data.mirror_url ? `<div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-glass); font-size:0.8rem;"><p style="color:var(--text-muted);">🔗 منبع:</p><a href="${data.mirror_url}" dir="ltr" style="font-size:0.8rem; word-break:break-all;">${data.mirror_url}</a></div>` : ''}
+            </div>
+          </aside>
+        </div>`;
         </div>
 
         <div id="tabIssues" style="display:none;"></div>
@@ -181,26 +198,21 @@
         return '<div class="empty-state"><p>هنوز فایلی وجود ندارد</p></div>';
       }
 
-      // Build tree structure
       const tree = {};
       files.forEach(f => {
         const parts = f.file_path.split('/');
         let current = tree;
         parts.forEach((part, i) => {
-          if (i === parts.length - 1) {
-            current[part] = f;
-          } else {
-            if (!current[part]) current[part] = {};
-            current = current[part];
-          }
+          if (i === parts.length - 1) { current[part] = f; }
+          else { if (!current[part]) current[part] = {}; current = current[part]; }
         });
       });
 
       return `
         <div class="file-browser">
           <div class="file-browser-header">
-            <span>${files.length} فایل</span>
-            <span style="color:var(--text-muted);">${formatSize(files.reduce((a, f) => a + (f.size || 0), 0))}</span>
+            <span style="font-size:0.85rem; color:var(--text-secondary);">${files.length} فایل</span>
+            <span style="color:var(--text-muted); font-size:0.8rem;">${formatSize(files.reduce((a, f) => a + (f.size || 0), 0))}</span>
           </div>
           ${renderTreeItems(tree, '', isOwner)}
         </div>
@@ -219,24 +231,22 @@
 
       for (const [name, value] of entries) {
         if (value.file_path) {
-          // File
           html += `
             <div class="file-item">
-              <span class="file-icon">${getFileIcon(name)}</span>
+              <span class="file-icon" style="color:var(--text-muted);">${getFileIcon(name)}</span>
               <span class="file-name" onclick="viewFile('${value.file_path}')" style="cursor:pointer; flex:1;">${name}</span>
               <span class="file-size">${formatSize(value.size)}</span>
-              ${isOwner && !value.is_binary ? `<a href="/edit?owner=${owner}&repo=${repo}&path=${encodeURIComponent(value.file_path)}" class="btn btn-sm btn-outline" style="margin-right:4px;" title="ویرایش">✏️</a>` : ''}
-              ${isOwner ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteFile('${value.file_path}')" title="حذف">🗑️</button>` : ''}
+              ${isOwner && !value.is_binary ? `<a href="/edit?owner=${owner}&repo=${repo}&path=${encodeURIComponent(value.file_path)}" class="btn btn-sm btn-outline" style="margin-right:4px; padding:2px 6px; font-size:0.7rem;" title="ویرایش">✏️</a>` : ''}
+              ${isOwner ? `<button class="btn btn-sm btn-outline" style="padding:2px 6px; font-size:0.7rem; color:var(--accent-red);" onclick="event.stopPropagation(); deleteFile('${value.file_path}')" title="حذف">✕</button>` : ''}
             </div>
           `;
         } else {
-          // Directory - collapsible
           const dirId = 'dir-' + (prefix + name).replace(/[^a-zA-Z0-9]/g, '-');
           html += `
             <div class="file-item" style="cursor:pointer;" onclick="document.getElementById('${dirId}').style.display = document.getElementById('${dirId}').style.display === 'none' ? 'block' : 'none'">
-              <span class="file-icon">📁</span>
-              <span class="file-name"><strong>${name}/</strong></span>
-              <span class="file-size" style="font-size:0.75rem; color:var(--text-muted);">▼</span>
+              <span class="file-icon" style="color:var(--accent-blue);">📁</span>
+              <span class="file-name"><strong>${name}</strong></span>
+              <span class="file-size" style="font-size:0.7rem; color:var(--text-muted);">▼</span>
             </div>
             <div id="${dirId}" style="padding-right:20px;">
           `;
@@ -1058,6 +1068,30 @@
     }
 
     loadRepo();
+
+    // Auto-load README after repo loads
+    async function loadReadme() {
+      try {
+        const data = await api(`/api/repos/${owner}/${repo}/file/README.md`);
+        const section = document.getElementById('readmeSection');
+        if (section && data.renderedContent) {
+          section.innerHTML = `
+            <div class="code-viewer" style="margin-top:16px;">
+              <div class="code-header">
+                <span>📝 README.md</span>
+              </div>
+              <div class="markdown-body">${data.renderedContent}</div>
+            </div>
+          `;
+        } else if (section) {
+          section.innerHTML = '';
+        }
+      } catch(e) {
+        const section = document.getElementById('readmeSection');
+        if (section) section.innerHTML = '';
+      }
+    }
+    setTimeout(loadReadme, 500);
   </script>
 </body>
 </html>
