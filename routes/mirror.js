@@ -143,9 +143,11 @@ router.post('/:owner/:repo/sync', requireAuth, (req, res) => {
 // Helper: Fetch JSON from URL
 function fetchJSON(url) {
   return new Promise((resolve, reject) => {
-    const options = {
-      headers: { 'User-Agent': 'iPmartGit/1.0' }
-    };
+    const ghToken = process.env.GITHUB_TOKEN || '';
+    const headers = { 'User-Agent': 'iPmartGit/1.0' };
+    if (ghToken) headers['Authorization'] = 'token ' + ghToken;
+
+    const options = { headers };
 
     const protocol = url.startsWith('https') ? https : http;
     protocol.get(url, options, (response) => {
@@ -164,6 +166,69 @@ function fetchJSON(url) {
 
 // Helper: Fetch GitHub tree and save files
 async function fetchGitHubTree(owner, repo, branch, repoId) {
+  // Method: Download ZIP archive (much faster than file-by-file)
+  const zipUrl = `https://api.github.com/repos/${owner}/${repo}/zipball/${branch}`;
+
+  try {
+    const zipBuffer = await downloadFile(zipUrl);
+    if (!zipBuffer || zipBuffer.length < 100) {
+      console.error('Failed to download ZIP, falling back to tree API');
+      return await fetchGitHubTreeFallback(owner, repo, branch, repoId);
+    }
+
+    // Extract ZIP
+    const AdmZip = require('adm-zip');
+    const zip = new AdmZip(zipBuffer);
+    const entries = zip.getEntries();
+
+    const insertFile = db.prepare(`
+      INSERT INTO repo_files (repo_id, file_path, file_name, content, is_binary, size)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    let count = 0;
+    for (const entry of entries) {
+      if (entry.isDirectory) continue;
+      if (count >= 500) break; // Limit to 500 files
+
+      // Remove the top-level directory from path (GitHub adds owner-repo-hash/)
+      const fullPath = entry.entryName;
+      const parts = fullPath.split('/');
+      parts.shift(); // Remove first directory
+      const filePath = parts.join('/');
+      if (!filePath) continue;
+
+      const fileName = parts[parts.length - 1];
+      const content = entry.getData();
+      const isBinary = isBinaryBuffer(content);
+
+      try {
+        insertFile.run(
+          repoId,
+          filePath,
+          fileName,
+          isBinary ? null : content.toString('utf8'),
+          isBinary ? 1 : 0,
+          entry.header.size || content.length
+        );
+        count++;
+      } catch (e) { /* skip duplicates */ }
+    }
+
+    // Update repo size
+    const totalSize = db.prepare('SELECT SUM(size) as total FROM repo_files WHERE repo_id = ?').get(repoId);
+    db.prepare('UPDATE repositories SET size = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(totalSize.total || 0, repoId);
+
+    console.log(`Mirrored ${count} files for ${owner}/${repo} via ZIP`);
+  } catch (err) {
+    console.error('ZIP download failed:', err.message);
+    return await fetchGitHubTreeFallback(owner, repo, branch, repoId);
+  }
+}
+
+// Fallback: file-by-file (slow, used if ZIP fails)
+async function fetchGitHubTreeFallback(owner, repo, branch, repoId) {
   const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
   const tree = await fetchJSON(treeUrl);
 
@@ -174,10 +239,9 @@ async function fetchGitHubTree(owner, repo, branch, repoId) {
     VALUES (?, ?, ?, ?, ?, ?)
   `);
 
-  // Only fetch content for small text files (< 1MB)
-  for (const item of tree.tree.slice(0, 100)) { // Limit to 100 files
+  for (const item of tree.tree.slice(0, 100)) {
     if (item.type !== 'blob') continue;
-    if (item.size > 1024 * 1024) continue; // Skip files > 1MB
+    if (item.size > 1024 * 1024) continue;
 
     try {
       const contentUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${item.path}?ref=${branch}`;
@@ -198,7 +262,6 @@ async function fetchGitHubTree(owner, repo, branch, repoId) {
       const fileName = item.path.split('/').pop();
       insertFile.run(repoId, item.path, fileName, content, isBinary, item.size || 0);
     } catch (err) {
-      // Skip files that can't be fetched
       const fileName = item.path.split('/').pop();
       insertFile.run(repoId, item.path, fileName, null, 0, item.size || 0);
     }
